@@ -1,0 +1,501 @@
+#!/usr/bin/env bash
+#
+# This script is made to maintain my Manjaro system with Pacman and
+# the alternative package managers - Snap and Flatpak.
+# It will only work properly on Manjaro Gnome as of writing.
+# The preferred AUR helper can be set manually by the user. for example, AUR_Helper="trizen" uses Trizen despite any other installed AUR helpers.
+
+AUR_Helper="$PACUI_AUR_HELPER"                                                      # global variable, which does not get unset (i.e. cleaned up), because it is needed both in GUI and non-GUI
+
+#set -u
+
+# if $PACUI_AUR_HELPER environment variable is not set, the installed AUR helpers are detected and one is chosen automatically:
+if [[ -z "$AUR_Helper" ]]                                                           # check, if AUR_Helper variable is empty. more precise: check, if output of "$AUR_Helper" is zero
+then
+
+    if [[ -f /usr/bin/yay ]]
+    then
+        AUR_Helper="yay"
+
+    elif [[ -f /usr/bin/pikaur ]]
+    then
+        AUR_Helper="pikaur"
+
+    elif [[ -f /usr/bin/aurman ]]                                                   # check, if /usr/bin/aurman file exists
+    then
+        AUR_Helper="aurman"
+
+    elif [[ -f /usr/bin/pakku ]]
+    then
+        AUR_Helper="pakku"
+
+    elif [[ -f /usr/bin/trizen ]]
+    then
+        AUR_Helper="trizen"
+
+    elif [[ -f /usr/bin/pacaur ]]
+    then
+        AUR_Helper="pacaur"
+
+    fi
+fi
+
+
+#====================================================================#
+# Maintain the System
+#====================================================================#
+# This functions check via Pacman for packages
+# to "Maintain the System".
+# Check if a single Package is installed.
+_isInstalled() {
+    package="$1";
+    check="$(sudo pacman -Qs --color always "${package}" | grep "local" | grep "${package} ")";
+    if [ -n "${check}" ] ; then
+        echo 0; #'0' means 'true' in Bash
+        return; #true
+    fi;
+    echo 1; #'1' means 'false' in Bash
+    return; #false
+}
+# Check if multiple packages are installed.
+_areInstalled() {
+  # The packages that are not installed will be added to this array.
+  toInstall=();
+
+  for pkg; do
+      # If the package IS installed, skip it.
+      if [[ $(_isInstalled "${pkg}") == 0 ]]; then
+          echo "${pkg} is already installed.";
+          continue;
+      fi;
+
+      #Otherwise, add it to the list of packages to install.
+      toInstall+=("${pkg}");
+  done;
+
+  # If no packages were added to the "${toInstall[@]}" array,
+  #     don't do anything and stop this function.
+  if [[ "${toInstall[@]}" == "" ]] ; then
+      echo "All packages are already installed.";
+      return;
+  fi;
+
+  # Otherwise, install all the packages that have been added to the "${toInstall[@]}" array.
+  printf "Packages not installed:\n%s\n" "${toInstall[@]}";
+#  sudo pacman -S "${toInstall[@]}";
+}
+# `_install <pkg>`
+_install() {
+    package="$1";
+
+    # If the package IS installed:
+    if [[ $(_isInstalled "${package}") == 0 ]]; then
+        echo "${package} is already installed.";
+        return;
+    fi;
+
+  # If the package is NOT installed:
+    if [[ $(_isInstalled "${package}") == 1 ]]; then
+        sudo pacman -S "${package}";
+    fi;
+}
+# `_installMany <pkg1> <pkg2> ...`
+# Works the same as `_install` above,
+#     but you can pass more than one package to this one.
+_installMany() {
+    # The packages that are not installed will be added to this array.
+    toInstall=();
+
+    for pkg; do
+        # If the package IS installed, skip it.
+        if [[ $(_isInstalled "${pkg}") == 0 ]]; then
+            echo "${pkg} is already installed.";
+            continue;
+        fi;
+
+        #Otherwise, add it to the list of packages to install.
+        toInstall+=("${pkg}");
+    done;
+
+    # If no packages were added to the "${toInstall[@]}" array,
+    #     don't do anything and stop this function.
+    if [[ "${toInstall[@]}" == "" ]] ; then
+        echo "All packages are already installed.";
+        return;
+    fi;
+
+    # Otherwise, install all the packages that have been added to the "${toInstall[@]}" array.
+    printf "Packages not installed:\n%s\n" "${toInstall[@]}";
+    sudo pacman -S "${toInstall[@]}";
+}
+
+package="meld";
+# Use this to install a single package.
+#_install "${package}";
+
+packages=("snapd" "flatpak");
+# Use this to install many packages.
+#_installMany "${packages[@]}";
+#Or,
+#_installMany "lshw" "inkscape"
+#====================================================================#
+# This function ensures a mirror sync before the Update
+# via "pacman-mirrors --interactive" (since I prefer to choose a mirror
+# in my country) and starts
+# a full system Update via Pacman.
+
+_update() {
+    package="$1";
+
+    # If the package IS installed:
+    if [[ $(_isInstalled "${package}") == 0 ]]; then
+        echo "${package} is already installed.";
+        pacui -2;
+        return;
+    fi;
+
+    # If the package is NOT installed:
+    if [[ $(_isInstalled "${package}") == 1 ]]; then
+        echo -e "\e[1mStarting Full System Update...\e[0m"
+        sudo pacman-mirrors --interactive;
+        sudo pacman -Syyu --noconfirm;
+        sudo pacman -S "${package}";
+    fi;
+}
+#====================================================================#
+# Use this to start the system update.
+#_update
+_update_full(){
+        # check for "pacman-mirrors" or "reflector" packages. one of those is needed!
+        if [[ -f /usr/bin/pacman-mirrors ]] || [[ -f /usr/bin/reflector ]]
+        then
+
+            echo " choosing fastest mirror (which can take a while) and updating system ..."
+            if [[ -f /usr/bin/pacman-mirrors ]]                                     # checks, whether file "pacman-mirrors" exists
+            then
+                sudo pacman-mirrors -f 3 && sudo pacman -Syyu --noconfirm                       # choose mirrors server (with up-to-date packages) with lowest ping from all available mirrors and sync database.
+                pamac update -a
+
+            elif [[ -f /usr/bin/reflector ]]                                        # checks, whether file "reflector" exists
+            then
+                sudo reflector --verbose --protocol https --age 1 --sort rate --save /etc/pacman.d/mirrorlist && sleep 20 && sudo pacman -Syyu          # If it does exists, then the mirror will sort by it
+
+            fi
+            echo ""
+        fi
+
+
+        echo " searching orphans ..."
+        if [[ -n "$(pacman -Qdt)" ]]                                            # only run the following commands, if output of "pacman -Qdt" is not empty.
+        then
+            pacman -Qdt --color always                                          # display orhphaned packages
+            # ask, whether to remove the displayed orphaned packages:
+            echo -e " \e[41m Do you want to remove these orphaned packages? [Y|n] \e[0m"
+            read -rs -n1 answer                                                 # save user input in "answer" variable (only accept 1 character as input)
+
+            case ${answer:-y} in                                                # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "y".
+                y|Y|yes|YES|Yes )                                               # do this, if "answer" is y or Y or yes or YES or Yes
+                    sudo pacman -Rsn $(pacman -Qqdt) --color always --noconfirm                     # ATTENTION: (i do not know why but) using quotes (" symbols) around $(...) breaks pacman command for multiple packages
+                    ;;
+                * )                                                             # do this in all other cases
+                    echo -e " \e[1m Packages have not been removed.\e[0m"
+                    ;;
+            esac                                                                # end of "case" loop
+        fi
+        echo ""
+
+
+        echo " checking systemctl ..."
+        # "LC_ALL=C" forces the output to use english language. this is important, if the output is queried.
+        if [[ "$( LC_ALL=C systemctl --failed | head -n 1 | awk '{print $1}' )" == "UNIT" ]]
+        then
+            echo -e " \e[41m The following systemd service(s) have failed. Please fix them manually. \e[0m"
+            echo -e " \e[41m Display detailed information about a systemd service with: systemctl status <SYSTEMD SERVICE NAME> \e[0m"
+            echo
+            systemctl --failed
+        fi
+        echo ""
+
+
+        echo " checking symlinks ..."
+        if [[ -n "$(sudo find -xtype l)" ]]                                         # only run, if output of "sudo find -xtype l -print" is not empty
+        then
+            echo -e " \e[41m The following symbolic links are broken, please fix them manually: \e[0m"
+            sudo find -xtype l
+        fi
+        echo ""
+
+
+        echo " checking consistency of local repository ..."
+        # check, whether "pacman -Dk" command finishes with errors, but do not output anything when this command runs with "&>/dev/null"
+        if ! ( pacman -Dk &>/dev/null )
+        then
+            echo -e " \e[41m The following inconsistencies have been found in your local packages: \e[0m"
+            echo -e "$( pacman -Dk )"                                               # encapsulate "pacman -Dk" in echo command. without this, the strict bash mode would quit pacui whenever "pacman -Dk" encounters an error!
+        fi
+        echo ""
+
+
+        if [[ -n "$AUR_Helper" ]]                                                   # check, if output of "$AUR_Helper" is non-zero
+        then
+            echo " checking AUR packages ..."
+            # download AUR package list to /tmp/pacui-aur/packages.
+
+            #wget -P "/tmp/pacui-aur/" "https://aur.archlinux.org/packages.gz" &>/dev/null
+            wget -P "/tmp/pacui-aur/" "https://aur.archlinux.org/packages.gz" &>/dev/null && gunzip -f "/tmp/pacui-aur/packages.gz"
+            # now, file /tmp/pacui-aur/packages contains an unsorted list of all packages from the AUR with the download date on top (in a commented line).
+
+            # check, if /tmp/pacui-aur/packages exists. /tmp/pacui-aur/packages does not exist, if there is no internet connection or something went wrong during the download of the list of AUR packages.
+            #if [[ -f /tmp/pacui-aur/packages.gz ]]
+            if [[ -f /tmp/pacui-aur/packages ]]
+            then
+
+                local pkg
+                # the "comm" command compares 2 files and outputs the differences between them. both files have to be sorted!
+                # "pacman -Qqm | sort" outputs a list of all installed packages from the AUR
+                #pkg=$(  comm -23 <(pacman -Qqm | sort) <(sort -u /tmp/pacui-aur/packages.gz)  )
+                pkg="$(  comm -23 <(pacman -Qqm | sort) <(sort -u /tmp/pacui-aur/packages)  )"
+
+                # only run the command inside the if-statement, if $pkg variable is not empty
+                if [[ -n "$pkg" ]]                                                  # checks, if length of string is non-zero ("-n" conditional bash expression is the opposite of "-z" (check, whether length of string is zero))
+                then
+                    echo -e " \e[1m The following packages are neither in your package repository nor the AUR. \e[0m"
+                    echo -e " \e[1m They are orphaned and will never be updated. \e[0m"
+                    echo -e " \e[41m It is recommended to remove these packages carefully: \e[0m"
+                    echo "$pkg"
+                    echo ""
+                fi
+
+            fi
+        fi
+        echo ""
+
+
+        echo " checking for packages moved to the AUR ..."
+        local pkg
+        # "pacman -Qqm" lists all packages, which are not from the system repositories.  "pacman -Qqem" lists all files, which were explicitly installed, but are not present in the system repositories.
+        # comm -23 only outputs unique packages from the 1. list (not present in the 2. list)
+        pkg="$(  comm -23 <(pacman -Qqm | sort) <(pacman -Qqem | sort)  )"
+
+        # only run the command inside the if-statement, if $pkg variable is not empty
+        if [[ -n "$pkg" ]]                                                          # checks, if length of string is non-zero ("-n" conditional bash expression is the opposite of "-z" (check, whether length of string is zero))
+        then
+            echo -e " \e[1m The following packages were not explicitly installed and are not part of your system repository. \e[0m"
+            echo -e " \e[41m If no important packages depend on them, it is recommended to remove these packages carefully: \e[0m"
+            echo "$pkg"
+            echo ""
+        fi
+        echo ""
+
+
+        if [[ "$(cat /proc/1/comm)" == "systemd" ]]                                 # if init system is systemd
+        then
+            echo " cleaning systemd log files ..."
+            # limit logs in journalctl to an age of 30 days and a combined size of 50mb
+            sudo journalctl --vacuum-size=50M --vacuum-time=30days
+        fi
+        echo ""
+
+
+        echo " cleaning package cache ..."
+        # remove all packages, which are not installed on this system, except the latest verions (this is a back up, in case somebody removes networkmanager)
+        sudo paccache -rvu -k 1
+        echo ""
+        # remove all package versions, except the latest 1
+        sudo paccache -rv -k 1
+        echo ""
+        # general comment: "pacaur" is currently the only aur helper, which creates its own download directory for aur packages. the content of this download folder can be cleaned with "pacaur -Sc". But "pacaur -Sc" removes too many files and is therefore not used here.
+
+
+        echo " checking installed kernels ..."
+        local {installed_kernels,available_kernels,eol_kernels}                     # declare local variables
+        # filter installed kernels from boot sector and determine, which package owns that file. this yields the package name of all installed kernels (including kernels from the AUR):
+        installed_kernels="$(
+            for p in $( command ls -1 /boot | grep -E '^vmlinuz' )                  # ATTENTION: (i do not know why but) using quotes (" symbols) around $(...) breaks for-loop
+            do
+                pacman -Qqo /boot/"$p"
+            done | sort -u )"
+        # Check if installed kernels are available in repositories and forward it/them to available_kernels variable:
+        available_kernels="$(
+            for p in $( echo "$installed_kernels" )                                 # ATTENTION: (i do not know why but) using quotes (" symbols) around $(...) breaks for-loop
+            do
+                pacman -Ssq "^$p$"
+            done | sort -u )"
+        # filter kernels to $eol_kernels variable, which are installed but no longer available:
+        eol_kernels="$( comm -13 <(echo "$available_kernels") <(echo "$installed_kernels") )"
+        # print warning message, if end-of-life kernel(s) are found:
+        if [[ -n "$eol_kernels" ]]
+        then
+            echo
+            echo -e " \e[41m The following Linux kernel(s) are no longer available in your repositories. \e[0m"
+            echo -e " \e[1m Do not expect any security or stability fixes for the(se) kernel(s) anymore. \e[0m"
+            echo -e " \e[1m Kernel modules are likely to break. It is recommended to remove the kernel(s).\e[0m"
+            echo -e " \e[1m If one or more of the following kernel(s) are taken from AUR, you may safely ignore this warning. \e[0m"
+            echo "$eol_kernels"
+        fi
+        echo ""
+}
+#====================================================================#
+# Pacdiff
+_pacdiff() {
+        echo " sudo pacdiff ..."
+        #set +u                                                                     # temporarily disable strict mode for environment variables
+
+        if [[ -n $DIFFPROG ]]                                                       # this if-condition avoids error message when $DIFFPROG is not set/empty
+        then
+            sudo pacdiff
+        else
+            # use pacdiff to search for .pacnew and .pacsave files. display both the original and the used config file using "pacui_diff" function defined above.
+            sudo DIFFPROG="meld" pacdiff
+        fi
+
+        #set -u
+        echo ""
+}
+#====================================================================#
+# Snap update if snapd is installed
+_isInstalled_snapd() {
+    package="snapd";
+    check="$(sudo pacman -Qs --color always "${package}" | grep "local" | grep "${package} ")";
+    if [ -n "${check}" ] ; then
+        echo 0; #'0' means 'true' in Bash
+        return; #true
+    fi;
+    echo 1; #'1' means 'false' in Bash
+    return; #false
+}
+# `_install <pkg>`
+_snapd() {
+    package="snapd";
+
+    # If the package IS installed:
+    if [[ $(_isInstalled_snapd "${package}") == 0 ]]; then
+        echo -e "\e[1mUpdating Snaps...\e[0m";
+        snap refresh;
+        echo "";
+        return;
+    fi;
+
+    # If the package is NOT installed:
+    if [[ $(_isInstalled_snapd "${package}") == 1 ]]; then
+        echo "${package} is not installed.";
+        echo "";
+    fi;
+}
+# list flatpak
+_snap_list() {
+    package="snapd";
+
+    # If the package IS installed:
+    if [[ $(_isInstalled_snapd "${package}") == 0 ]]; then
+        echo;
+        echo -e "\e[1m Installed Snaps: \e[0m";
+        snap list;
+        return;
+    fi;
+}
+#====================================================================#
+# Flatpak update if it is installed
+_isInstalled_flatpak() {
+    package="flatpak";
+    check="$(sudo pacman -Qs --color always "${package}" | grep "local" | grep "${package} ")";
+    if [ -n "${check}" ] ; then
+        echo 0; #'0' means 'true' in Bash
+        return; #true
+    fi;
+    echo 1; #'1' means 'false' in Bash
+    return; #false
+}
+# `_install <pkg>`
+_flatpak() {
+    package="flatpak";
+
+    # If the package IS installed:
+    if [[ $(_isInstalled_flatpak "${package}") == 0 ]]; then
+        echo -e "\e[1mUpdating Flatpaks...\e[0m";
+        flatpak update -y;
+        flatpak uninstall --unused;
+        echo "";
+        return;
+    fi;
+
+    # If the package is NOT installed:
+    if [[ $(_isInstalled_flatpak "${package}") == 1 ]]; then
+        echo "${package} is not installed.";
+        echo "";
+    fi;
+}
+# list flatpak
+_flatpak_list() {
+    package="flatpak";
+
+    # If the package IS installed:
+    if [[ $(_isInstalled_flatpak "${package}") == 0 ]]; then
+        echo;
+        echo -e "\e[1m Installed Flatpaks: \e[0m";
+        flatpak list;
+        return;
+    fi;
+}
+#====================================================================#
+###################################################################
+### Check if User is sudo. ###
+###################################################################
+_sudo_check() {
+  if [ $EUID != 0 ]; then
+  sudo "$0" "$@"
+  exit $?
+fi;
+}
+#
+#_sudo_check;
+#
+#################################################################
+### Check what time the Update started and start the Update.. ###
+#################################################################
+echo;
+TIMEFORMAT='Update Completed in: %R seconds.'
+time {
+#
+#_update
+#_areInstalled
+#_installMany "${packages[@]}";
+_update_full;
+_install "${package}";
+_pacdiff;
+_flatpak;
+_snapd;
+_flatpak_list;
+_snap_list;
+#
+}
+#
+#
+#
+# Show something useless after everything is done LOL!
+_smile() {
+echo -e "\n\t\t\t$(tput setaf 5)...Your system is up to date..."
+echo -e "\t\t\t Or it explodes right away *_*"
+echo
+echo -e	"\t\tMistakes you find in this post, you may keep!$(tput sgr 0)"
+echo -e "$(tput setaf 2)
+\t\t                ¶¶¶¶¶¶¶¶¶¶¶¶
+\t\t                 ¶¶            ¶¶
+\t\t   ¶¶¶¶¶        ¶¶                ¶¶
+\t\t   ¶     ¶     ¶¶      ¶¶    ¶¶     ¶¶
+\t\t    ¶     ¶    ¶¶       ¶¶    ¶¶      ¶¶
+\t\t     ¶    ¶   ¶¶        ¶¶    ¶¶      ¶¶
+\t\t      ¶   ¶   ¶                         ¶¶
+\t\t    ¶¶¶¶¶¶¶¶¶¶¶¶                         ¶¶
+\t\t   ¶            ¶    ¶¶            ¶¶    ¶¶
+\t\t  ¶¶            ¶    ¶¶            ¶¶    ¶¶
+\t\t ¶¶   ¶¶¶¶¶¶¶¶¶¶¶      ¶¶        ¶¶     ¶¶
+\t\t ¶               ¶       ¶¶¶¶¶¶¶       ¶¶
+\t\t ¶¶              ¶                    ¶¶
+\t\t  ¶   ¶¶¶¶¶¶¶¶¶¶¶¶                   ¶¶
+\t\t  ¶¶           ¶  ¶¶                ¶¶
+\t\t  ¶¶¶¶¶¶¶¶¶¶¶¶    ¶¶            ¶¶
+\t\t                  ¶¶¶¶¶¶¶¶¶¶¶$(tput sgr 0)"
+echo
+}
+_smile
