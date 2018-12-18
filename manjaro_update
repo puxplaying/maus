@@ -467,6 +467,7 @@ _flatpak;
 _snapd;
 _flatpak_list;
 _snap_list;
+echo;
 #
 }
 #
