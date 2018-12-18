@@ -7,7 +7,7 @@ This script will also install Meld to your system in case it's not installed, fo
 So what is it actually doing?
 
   - Mirrorsync and system update via Pacman
-  - AUR update via Pamac CLI pamac update -a ( Note that I didn't want to make this a dependecy, so it will not install Pamac )
+  - AUR update via Pamac CLI ```pamac update -a``` ( Note that I didn't want to make this a dependecy, so it will not install Pamac )
   - Cleaning the System
   - Checks if Meld is installed and runs sudo pacdiff
   - Updates Flatpaks and cleans via flatpak uninstall --unused
