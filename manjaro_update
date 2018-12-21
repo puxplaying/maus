@@ -499,4 +499,4 @@ echo -e "$(tput setaf 2)
 \t\t                  ¶¶¶¶¶¶¶¶¶¶¶$(tput sgr 0)"
 echo
 }
-_smile
+#_smile
