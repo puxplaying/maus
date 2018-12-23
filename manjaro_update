@@ -370,7 +370,7 @@ _snapd() {
 
     # If the package IS installed:
     if [[ $(_isInstalled_snapd "${package}") == 0 ]]; then
-        echo -e "\e[1mUpdating Snaps...\e[0m";
+        echo -e "\e[1m Updating Snaps...\e[0m";
         sudo snap refresh;
         echo "";
         return;
@@ -412,7 +412,7 @@ _flatpak() {
 
     # If the package IS installed:
     if [[ $(_isInstalled_flatpak "${package}") == 0 ]]; then
-        echo -e "\e[1mUpdating Flatpaks...\e[0m";
+        echo -e "\e[1m Updating Flatpaks...\e[0m";
         flatpak update -y;
         flatpak uninstall --unused;
         echo "";
