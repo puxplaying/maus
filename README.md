@@ -14,5 +14,3 @@ So what is it actually doing?
   - (If Installed) Updates Snaps
   - (If Installed) Lists all installed Flatpaks and Snaps
   - Shows you how long it did take to run this script in seconds
-  - Presents you some nonsense text and a smiley (deactivated)
-
