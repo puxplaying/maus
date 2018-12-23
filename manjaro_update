@@ -371,7 +371,7 @@ _snapd() {
     # If the package IS installed:
     if [[ $(_isInstalled_snapd "${package}") == 0 ]]; then
         echo -e "\e[1mUpdating Snaps...\e[0m";
-        snap refresh;
+        sudo snap refresh;
         echo "";
         return;
     fi;
