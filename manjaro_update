@@ -473,30 +473,3 @@ echo;
 #
 #
 #
-# Show something useless after everything is done LOL!
-_smile() {
-echo -e "\n\t\t\t$(tput setaf 5)...Your system is up to date..."
-echo -e "\t\t\t Or it explodes right away *_*"
-echo
-echo -e	"\t\tMistakes you find in this post, you may keep!$(tput sgr 0)"
-echo -e "$(tput setaf 2)
-\t\t                ¶¶¶¶¶¶¶¶¶¶¶¶
-\t\t                 ¶¶            ¶¶
-\t\t   ¶¶¶¶¶        ¶¶                ¶¶
-\t\t   ¶     ¶     ¶¶      ¶¶    ¶¶     ¶¶
-\t\t    ¶     ¶    ¶¶       ¶¶    ¶¶      ¶¶
-\t\t     ¶    ¶   ¶¶        ¶¶    ¶¶      ¶¶
-\t\t      ¶   ¶   ¶                         ¶¶
-\t\t    ¶¶¶¶¶¶¶¶¶¶¶¶                         ¶¶
-\t\t   ¶            ¶    ¶¶            ¶¶    ¶¶
-\t\t  ¶¶            ¶    ¶¶            ¶¶    ¶¶
-\t\t ¶¶   ¶¶¶¶¶¶¶¶¶¶¶      ¶¶        ¶¶     ¶¶
-\t\t ¶               ¶       ¶¶¶¶¶¶¶       ¶¶
-\t\t ¶¶              ¶                    ¶¶
-\t\t  ¶   ¶¶¶¶¶¶¶¶¶¶¶¶                   ¶¶
-\t\t  ¶¶           ¶  ¶¶                ¶¶
-\t\t  ¶¶¶¶¶¶¶¶¶¶¶¶    ¶¶            ¶¶
-\t\t                  ¶¶¶¶¶¶¶¶¶¶¶$(tput sgr 0)"
-echo
-}
-#_smile
