@@ -8,7 +8,7 @@ So what is it actually doing?
 
   - Mirrorsync and system update via Pacman
   - AUR update via Pamac CLI ```pamac update -a``` ( Note that I didn't want to make this a dependency, so it will not install Pamac )
-  - Cleaning the System ( Note this will remove all package versions, except the latest 1 )
+  - Cleaning the System ( Note this will remove all package versions, except the latest 2 )
   - Checks if Meld is installed and runs ```sudo pacdiff```
   - (If Installed) Updates Flatpaks and cleans via ```flatpak uninstall --unused```
   - (If Installed) Updates Snaps
