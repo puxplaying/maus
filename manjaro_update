@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#!/usr/bin/bash
+SHELL=/usr/bin/bash
 #
 # This script is made to maintain my Manjaro system with Pacman and
 # the alternative package managers - Snap and Flatpak.
@@ -299,10 +300,10 @@ _update_full(){
 
         echo " cleaning package cache ..."
         # remove all packages, which are not installed on this system, except the latest verions (this is a back up, in case somebody removes networkmanager)
-        sudo paccache -rvu -k 1
+        sudo paccache -rvu -k 2
         echo ""
-        # remove all package versions, except the latest 1
-        sudo paccache -rv -k 1
+        # remove all package versions, except the latest 2
+        sudo paccache -rv -k 2
         echo ""
         # general comment: "pacaur" is currently the only aur helper, which creates its own download directory for aur packages. the content of this download folder can be cleaned with "pacaur -Sc". But "pacaur -Sc" removes too many files and is therefore not used here.
 
