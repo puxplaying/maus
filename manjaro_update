@@ -4,6 +4,14 @@ SHELL=/usr/bin/bash
 # This script is made to maintain my Manjaro system with Pacman and
 # the alternative package managers - Snap and Flatpak.
 # It will only work properly on Manjaro Gnome as of writing.
+#####################################################################
+killproc() {
+	echo -e "\n*** Received SIGINT, aborting! ***\n"
+	kill -- -$$ && exit 2
+}
+#####################################################################
+#####################################################################
+#####################################################################
 # The preferred AUR helper can be set manually by the user. for example, AUR_Helper="trizen" uses Trizen despite any other installed AUR helpers.
 
 AUR_Helper="$PACUI_AUR_HELPER"                                                      # global variable, which does not get unset (i.e. cleaned up), because it is needed both in GUI and non-GUI
@@ -166,6 +174,19 @@ _update() {
 #====================================================================#
 # Use this to start the system update.
 #_update
+###
+###
+# check for database lock file before update
+_db_check(){
+	if [[ -f /var/lib/pacman/db.lck ]]
+	then
+		echo " removing database lock file... "
+		sudo rm /var/lib/pacman/db.lck
+	fi
+
+}
+###
+###
 _update_full(){
         # check for "pacman-mirrors" or "reflector" packages. one of those is needed!
         if [[ -f /usr/bin/pacman-mirrors ]] || [[ -f /usr/bin/reflector ]]
@@ -174,8 +195,11 @@ _update_full(){
             echo " choosing fastest mirror (which can take a while) and updating system ..."
             if [[ -f /usr/bin/pacman-mirrors ]]                                     # checks, whether file "pacman-mirrors" exists
             then
+                sudo find /var/cache/pacman/pkg/ -iname "*.part" -exec rm {} \;
                 sudo pacman-mirrors -f 3 && sudo pacman -Syyu --noconfirm                       # choose mirrors server (with up-to-date packages) with lowest ping from all available mirrors and sync database.
                 pamac update -a
+                #pamac checkupdates -a --devel
+                #pamac update --force-refresh -a
 
             elif [[ -f /usr/bin/reflector ]]                                        # checks, whether file "reflector" exists
             then
@@ -461,6 +485,8 @@ time {
 #_update
 #_areInstalled
 #_installMany "${packages[@]}";
+echo " checking for database lock file ... "
+_db_check;
 _update_full;
 _install "${package}";
 _pacdiff;
@@ -471,6 +497,8 @@ _snap_list;
 echo;
 #
 }
+#
+trap killproc INT
 #
 #
 #
