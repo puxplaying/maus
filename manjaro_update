@@ -4,14 +4,6 @@ SHELL=/usr/bin/bash
 # This script is made to maintain my Manjaro system with Pacman and
 # the alternative package managers - Snap and Flatpak.
 # It will only work properly on Manjaro Gnome as of writing.
-#####################################################################
-killproc() {
-	echo -e "\n*** Received SIGINT, aborting! ***\n"
-	kill -- -$$ && exit 2
-}
-#####################################################################
-#####################################################################
-#####################################################################
 # The preferred AUR helper can be set manually by the user. for example, AUR_Helper="trizen" uses Trizen despite any other installed AUR helpers.
 
 AUR_Helper="$PACUI_AUR_HELPER"                                                      # global variable, which does not get unset (i.e. cleaned up), because it is needed both in GUI and non-GUI
@@ -198,8 +190,6 @@ _update_full(){
                 sudo find /var/cache/pacman/pkg/ -iname "*.part" -exec rm {} \;
                 sudo pacman-mirrors -f 3 && sudo pacman -Syyu --noconfirm                       # choose mirrors server (with up-to-date packages) with lowest ping from all available mirrors and sync database.
                 pamac update -a
-                #pamac checkupdates -a --devel
-                #pamac update --force-refresh -a
 
             elif [[ -f /usr/bin/reflector ]]                                        # checks, whether file "reflector" exists
             then
@@ -497,8 +487,6 @@ _snap_list;
 echo;
 #
 }
-#
-trap killproc INT
 #
 #
 #
