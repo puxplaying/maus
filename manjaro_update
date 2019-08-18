@@ -4,11 +4,8 @@ SHELL=/usr/bin/bash
 # This script is made to maintain my Manjaro system with Pacman and
 # the alternative package managers - Snap and Flatpak.
 # It will only work properly on Manjaro Gnome as of writing.
-# The preferred AUR helper can be set manually by the user. for example, AUR_Helper="trizen" uses Trizen despite any other installed AUR helpers.
 
-AUR_Helper="$PACUI_AUR_HELPER"                                                      # global variable, which does not get unset (i.e. cleaned up), because it is needed both in GUI and non-GUI
-
-#set -u
+AUR_Helper="$PACUI_AUR_HELPER"
 
 # if $PACUI_AUR_HELPER environment variable is not set, the installed AUR helpers are detected and one is chosen automatically:
 if [[ -z "$AUR_Helper" ]]                                                           # check, if AUR_Helper variable is empty. more precise: check, if output of "$AUR_Helper" is zero
@@ -140,36 +137,9 @@ packages=("snapd" "flatpak");
 #Or,
 #_installMany "lshw" "inkscape"
 #====================================================================#
-# This function ensures a mirror sync before the Update
-# via "pacman-mirrors --interactive" (since I prefer to choose a mirror
-# in my country) and starts
-# a full system Update via Pacman.
-
-_update() {
-    package="$1";
-
-    # If the package IS installed:
-    if [[ $(_isInstalled "${package}") == 0 ]]; then
-        echo "${package} is already installed.";
-        pacui -2;
-        return;
-    fi;
-
-    # If the package is NOT installed:
-    if [[ $(_isInstalled "${package}") == 1 ]]; then
-        echo -e "\e[1mStarting Full System Update...\e[0m"
-        sudo pacman-mirrors --interactive;
-        sudo pacman -Syyu --noconfirm;
-        sudo pacman -S "${package}";
-    fi;
-}
-#====================================================================#
-# Use this to start the system update.
-#_update
-###
-###
 # check for database lock file before update
 _db_check(){
+  echo " checking for database lock file ... "
 	if [[ -f /var/lib/pacman/db.lck ]]
 	then
 		echo " removing database lock file ... "
@@ -177,21 +147,20 @@ _db_check(){
 	fi
 
 }
-###
-###
+# start full system update
 _update_full(){
         # check for "pacman-mirrors" or "reflector" packages. one of those is needed!
         if [[ -f /usr/bin/pacman-mirrors ]] || [[ -f /usr/bin/reflector ]]
         then
 
             echo " choosing fastest mirror (which can take a while) and updating system ..."
-            if [[ -f /usr/bin/pacman-mirrors ]]                                     # checks, whether file "pacman-mirrors" exists
+            if [[ -f /usr/bin/pacman-mirrors ]]                                                                         # checks, whether file "pacman-mirrors" exists
             then
-                sudo find /var/cache/pacman/pkg/ -iname "*.part" -exec rm {} \;		# remove partially downloaded packages
-                sudo pacman-mirrors -f 3 && sudo pacman -Syyu --noconfirm                       # choose mirrors server (with up-to-date packages) with lowest ping from all available mirrors and sync database.
+                sudo find /var/cache/pacman/pkg/ -iname "*.part" -exec rm {} \;		 # remove partially downloaded packages
+                sudo pacman-mirrors -f 3 && sudo pacman -Syyu --noconfirm           # choose mirrors server (with up-to-date packages) with lowest ping from all available mirrors and sync database.
                 pamac update -a
 
-            elif [[ -f /usr/bin/reflector ]]                                        # checks, whether file "reflector" exists
+            elif [[ -f /usr/bin/reflector ]]                                      # checks, whether file "reflector" exists
             then
                 sudo reflector --verbose --protocol https --age 1 --sort rate --save /etc/pacman.d/mirrorlist && sleep 20 && sudo pacman -Syyu          # If it does exists, then the mirror will sort by it
 
@@ -360,11 +329,9 @@ _pacdiff() {
         then
             sudo pacdiff
         else
-            # use pacdiff to search for .pacnew and .pacsave files. display both the original and the used config file using "pacui_diff" function defined above.
             sudo DIFFPROG="meld" pacdiff
         fi
 
-        #set -u
         echo ""
 }
 #====================================================================#
@@ -397,7 +364,7 @@ _snapd() {
         echo "";
     fi;
 }
-# list flatpak
+# list snap
 _snap_list() {
     package="snapd";
 
@@ -452,10 +419,10 @@ _flatpak_list() {
         return;
     fi;
 }
-#====================================================================#
-###################################################################
-### Check if User is sudo. ###
-###################################################################
+#==========================================================================#
+############################################################################
+### Check if User is sudo. ### (Placeholder function not used right now) ###
+############################################################################
 _sudo_check() {
   if [ $EUID != 0 ]; then
   sudo "$0" "$@"
@@ -471,11 +438,6 @@ fi;
 echo;
 TIMEFORMAT='Update Completed in: %R seconds.'
 time {
-#
-#_update
-#_areInstalled
-#_installMany "${packages[@]}";
-echo " checking for database lock file ... "
 _db_check;
 _update_full;
 _install "${package}";
@@ -485,8 +447,4 @@ _snapd;
 _flatpak_list;
 _snap_list;
 echo;
-#
 }
-#
-#
-#
