@@ -6,9 +6,18 @@ This script will also install Meld to your system in case it's not installed, fo
 
 So what is it actually doing?
 
+  - Check for database lock file and remove it in case it's present
+  - Remove partially downloaded packages
   - Mirrorsync and system update via Pacman
   - AUR update via Pamac CLI ```pamac update -a``` ( Note that I didn't want to make this a dependency, so it will not install Pamac )
-  - Cleaning the System ( Note this will remove all package versions, except the latest 2 )
+  - Search for orphaned packages and promt for removal
+  - Check for failed systemd service(s)
+  - Check for broken symlinks
+  - Check consistency of local repository
+  - Check for packages moved to the AUR
+  - Clean systemd log files
+  - Clean package cache ( Note this will remove all package versions, except the latest 2 )
+  - Check for EOL Kernels
   - Checks if Meld is installed and runs ```sudo pacdiff```
   - (If Installed) Updates Flatpaks and cleans via ```flatpak uninstall --unused```
   - (If Installed) Updates Snaps
