@@ -1,8 +1,8 @@
 # manjaro-update
 
-This Bash script was initially made for myself, so it will make use of Pamac and Meld. Part of the code for the System Maintenance is from ```pacui```
+This Bash script was initially made for myself, so it will make use of Pamac and Meld. Part of the code for the System Maintenance is from ```pacui``` https://github.com/excalibur1234/pacui
 
-This script will also install Meld to your system in case it's not installed, for the simple reason because it will run a sudo pacdiff command and use Meld for the diff. 
+This script will also install Meld to your system in case it's not installed, for the simple reason because it will run a ```sudo pacdiff``` command and use Meld for the diff. 
 
 So what is it actually doing?
 
