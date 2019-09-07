@@ -327,9 +327,9 @@ _pacdiff() {
 
         if [[ -n $DIFFPROG ]]                                                       # this if-condition avoids error message when $DIFFPROG is not set/empty
         then
-            sudo pacdiff
+            sudo -E pacdiff
         else
-            sudo DIFFPROG="meld" pacdiff
+            sudo -E DIFFPROG="meld" pacdiff
         fi
 
         echo ""
