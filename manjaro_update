@@ -1,10 +1,12 @@
 #!/usr/bin/bash
 SHELL=/usr/bin/bash
 #
-# This script is made to maintain my Manjaro system with Pacman and
-# the alternative package managers - Snap and Flatpak.
-# It will only work properly on Manjaro Gnome as of writing.
+# This Bash script was made to update and maintain a Manjaro system with Pacman and
+# the alternative package managers - Pamac, Snap and Flatpak in a automatic
+# manner, with as little as necessary user intervention required.
+# It makes use of the functionality of PacUI for the system maintance.
 
+# AUR Helper
 AUR_Helper="$PACUI_AUR_HELPER"
 
 # if $PACUI_AUR_HELPER environment variable is not set, the installed AUR helpers are detected and one is chosen automatically:
@@ -139,7 +141,7 @@ packages=("snapd" "flatpak");
 #====================================================================#
 # check for database lock file before update
 _db_check(){
-  echo " checking for database lock file ... "
+    echo " checking for database lock file ... "
 	if [[ -f /var/lib/pacman/db.lck ]]
 	then
 		echo " removing database lock file ... "
@@ -396,7 +398,9 @@ _flatpak() {
     if [[ $(_isInstalled_flatpak "${package}") == 0 ]]; then
         echo -e "\e[1m Updating Flatpaks...\e[0m";
         flatpak update -y;
-        flatpak uninstall --unused;
+        echo "";
+        echo -e "\e[1m Uninstalling Orphaned Flatpaks...\e[0m";
+        flatpak uninstall --unused --delete-data -y;
         echo "";
         return;
     fi;
@@ -419,19 +423,6 @@ _flatpak_list() {
         return;
     fi;
 }
-#==========================================================================#
-############################################################################
-### Check if User is sudo. ### (Placeholder function not used right now) ###
-############################################################################
-_sudo_check() {
-  if [ $EUID != 0 ]; then
-  sudo "$0" "$@"
-  exit $?
-fi;
-}
-#
-#_sudo_check;
-#
 #################################################################
 ### Check what time the Update started and start the Update.. ###
 #################################################################
@@ -446,5 +437,6 @@ _flatpak;
 _snapd;
 _flatpak_list;
 _snap_list;
+#notify-send "Update Complete"
 echo;
 }
