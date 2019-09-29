@@ -6,7 +6,7 @@ with as little as necessary user intervention required.
 It makes use of the functionality of PacUI 
 for the system maintenance. https://github.com/excalibur1234/pacui
 
-This script will also install Meld to your system in case it's not installed, for the simple reason because it will run a ```sudo pacdiff``` command and use Meld for the diff. 
+This script will also install Meld to your system in case it's not installed, for the simple reason because it will run a ```sudo pacdiff``` command and use Meld for the diff if no Environment Variable was set by the user, otherwise user settings will be used. 
 
 So what is it actually doing?
 
@@ -24,7 +24,7 @@ So what is it actually doing?
   - Clean package cache ( Note this will remove all package versions, except the latest 2 )
   - Check for EOL Kernels
   - Checks if Meld is installed and runs ```sudo pacdiff```
-  - (If Installed) Updates Flatpaks and cleans via ```flatpak uninstall --unused```
+  - (If Installed) Updates Flatpaks and cleans via ```flatpak uninstall --unused --delete-data```
   - (If Installed) Updates Snaps
   - (If Installed) Lists all installed Flatpaks and Snaps
   - Shows you how long it did take to run this script in seconds
