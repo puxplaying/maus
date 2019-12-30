@@ -8,7 +8,7 @@ for the system maintenance. https://github.com/excalibur1234/pacui
 
 This script will also install Meld to your system in case it's not installed, for the simple reason because it will run a ```sudo pacdiff``` command and use Meld for the diff if no Environment Variable was set by the user, otherwise user settings will be used.
 
-In case you don't want it to check for Meld, comment the function at line 434.
+In case you don't want it to check for Meld, comment the function at the end of the script.
 ```
 #_install "${package}";
 ```
