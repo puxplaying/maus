@@ -162,9 +162,9 @@ _update_full(){
                 sudo pacman-mirrors -f 3 && sudo pacman -Syyu --noconfirm           # choose mirrors server (with up-to-date packages) with lowest ping from all available mirrors and sync database.
                 pamac update -a
 
-            elif [[ -f /usr/bin/reflector ]]                                      # checks, whether file "reflector" exists
+            elif [[ -f /usr/bin/reflector ]]                                        # checks, whether file "reflector" exists
             then
-                sudo reflector --verbose --protocol https --age 1 --sort rate --save /etc/pacman.d/mirrorlist && sleep 20 && sudo pacman -Syyu          # If it does exists, then the mirror will sort by it
+                sudo reflector --verbose --protocol https --age 1 --sort rate --save /etc/pacman.d/mirrorlist && sleep 10 && sudo pacman -Syyu          # If it does exists, then the mirror will sort by it
 
             fi
             echo ""
@@ -172,33 +172,40 @@ _update_full(){
 
 
         echo " searching orphans ..."
-        if [[ -n "$(pacman -Qdt)" ]]                                            # only run the following commands, if output of "pacman -Qdt" is not empty.
+        if [[ "$AUR_Helper" == "yay" ]]
         then
-            pacman -Qdt --color always                                          # display orhphaned packages
-            # ask, whether to remove the displayed orphaned packages:
-            echo -e " \e[41m Do you want to remove these orphaned packages? [Y|n] \e[0m"
-            read -rs -n1 answer                                                 # save user input in "answer" variable (only accept 1 character as input)
+            yay -Yc                                                                 # do orphan cleaning and yay cleaning
 
-            case ${answer:-y} in                                                # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "y".
-                y|Y|yes|YES|Yes )                                               # do this, if "answer" is y or Y or yes or YES or Yes
-                    sudo pacman -Rsn $(pacman -Qqdt) --color always --noconfirm                     # ATTENTION: (i do not know why but) using quotes (" symbols) around $(...) breaks pacman command for multiple packages
-                    ;;
-                * )                                                             # do this in all other cases
-                    echo -e " \e[1m Packages have not been removed.\e[0m"
-                    ;;
-            esac                                                                # end of "case" loop
+        else                                                                        # do this for all other AUR helpers:
+            if [[ -n "$(pacman -Qdt)" ]]                                            # only run the following commands, if output of "pacman -Qdt" is not empty.
+            then
+                pacman -Qdt --color always                                          # display orphaned packages
+                # ask, whether to remove the displayed orphaned packages:
+                echo -e " \e[41m Do you want to remove these orphaned packages? [Y|n] \e[0m"
+                read -r -n 1 -e answer                                              # save user input in "answer" variable (only accept 1 character as input)
+
+                case ${answer:-y} in                                                # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "y".
+                    y|Y|yes|YES|Yes )                                               # do this, if "answer" is y or Y or yes or YES or Yes
+                        sudo pacman -Rsn $(pacman -Qqdt) --color always --noconfirm                     # ATTENTION: (i do not know why but) using quotes (" symbols) around $(...) breaks pacman command for multiple packages
+                        ;;
+                    * )                                                             # do this in all other cases
+                        echo -e " \e[1m Packages have not been removed.\e[0m"
+                        ;;
+                esac                                                                # end of "case" loop
+            fi
         fi
         echo ""
 
 
         echo " checking systemctl ..."
         # "LC_ALL=C" forces the output to use english language. this is important, if the output is queried.
-        if [[ "$( LC_ALL=C systemctl --failed | head -n 1 | awk '{print $1}' )" == "UNIT" ]]
+        if [[ "$( LC_ALL=C systemctl --failed |  awk 'NR==1 {print $1}' )" == "UNIT" ]]
         then
             echo -e " \e[41m The following systemd service(s) have failed. Please fix them manually. \e[0m"
-            echo -e " \e[41m Display detailed information about a systemd service with: systemctl status <SYSTEMD SERVICE NAME> \e[0m"
+            echo -e " \e[1m Display detailed information about a systemd service with: systemctl status <SYSTEMD SERVICE NAME> \e[0m"
             echo
             systemctl --failed
+            echo
         fi
         echo ""
 
@@ -254,7 +261,6 @@ _update_full(){
 
             fi
         fi
-        echo ""
 
 
         echo " checking for packages moved to the AUR ..."
@@ -278,14 +284,14 @@ _update_full(){
         then
             echo " cleaning systemd log files ..."
             # limit logs in journalctl to an age of 30 days and a combined size of 50mb
-            sudo journalctl --vacuum-size=50M --vacuum-time=30days
+            sudo journalctl --vacuum-size=100M --vacuum-time=30days
         fi
         echo ""
 
 
         echo " cleaning package cache ..."
-        # remove all packages, which are not installed on this system, except the latest verions (this is a back up, in case somebody removes networkmanager)
-        sudo paccache -rvu -k 2
+        # remove all packages, which are not installed on this system, except the latest versions (this is a back up, in case somebody removes networkmanager)
+        sudo paccache -rvu -k 1
         echo ""
         # remove all package versions, except the latest 2
         sudo paccache -rv -k 2
@@ -417,7 +423,6 @@ _flatpak_list() {
 
     # If the package IS installed:
     if [[ $(_isInstalled_flatpak "${package}") == 0 ]]; then
-        echo;
         echo -e "\e[1m Installed Flatpaks: \e[0m";
         flatpak list;
         return;
