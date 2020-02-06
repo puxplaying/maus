@@ -32,4 +32,4 @@ So what is it actually doing?
   - (If Installed) Updates Flatpaks and cleans via ```flatpak uninstall --unused --delete-data```
   - (If Installed) Updates Snaps
   - (If Installed) Lists all installed Flatpaks and Snaps
-  - Shows you how long it did take to run this script in seconds
+  - Shows you how long it did take to run this script
