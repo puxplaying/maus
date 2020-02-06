@@ -231,11 +231,12 @@ _update_full(){
 
         if [[ -n "$AUR_Helper" ]]                                                   # check, if output of "$AUR_Helper" is non-zero
         then
-            echo " checking AUR packages ..."
+            echo " checking AUR packages (which can take a while) ..."
             # download AUR package list to /tmp/pacui-aur/packages.
 
             #wget -P "/tmp/pacui-aur/" "https://aur.archlinux.org/packages.gz" &>/dev/null
-            wget -P "/tmp/pacui-aur/" "https://aur.archlinux.org/packages.gz" &>/dev/null && gunzip -f "/tmp/pacui-aur/packages.gz"
+            #wget -P "/tmp/pacui-aur/" "https://aur.archlinux.org/packages.gz" &>/dev/null && gunzip -f "/tmp/pacui-aur/packages.gz"
+            curl --url 'https://aur.archlinux.org/packages.gz' --create-dirs --output "/tmp/pacui-aur/packages.gz" &>/dev/null && gunzip -f "/tmp/pacui-aur/packages.gz"
             # now, file /tmp/pacui-aur/packages contains an unsorted list of all packages from the AUR with the download date on top (in a commented line).
 
             # check, if /tmp/pacui-aur/packages exists. /tmp/pacui-aur/packages does not exist, if there is no internet connection or something went wrong during the download of the list of AUR packages.
@@ -304,7 +305,7 @@ _update_full(){
         installed_kernels="$(
             for p in $( command ls -1 /boot | grep -E '^vmlinuz' )                  # ATTENTION: using quotes (" symbols) around $(...) breaks for-loop
             do
-                echo linux$( echo $p | cut -d"-" -f2 | tr -d ".")                   # do not print error messages
+                echo linux$( echo $p | cut -d"-" -f2 | tr -d ".")
             done | sort -u )"
         # check, whether any installed kernels have been found  (in ARCH linux, no kernels are found, but this is ok, because kernels are not EOLd as in Manjaro)
         if [[ -n "$installed_kernels" ]]
@@ -438,7 +439,6 @@ _flatpak_list() {
 ### Check what time the Update started and start the Update.. ###
 #################################################################
 echo;
-TIMEFORMAT='Update Completed in: %R seconds.'
 time {
 _db_check;
 _update_full;
@@ -448,6 +448,8 @@ _flatpak;
 _snapd;
 _flatpak_list;
 _snap_list;
-#notify-send "Update Complete"
-echo;
+echo "";
+echo -e "\e[1m Update Completed in: \e[0m";
+#notify-send "Update Complete";
 }
+exit
