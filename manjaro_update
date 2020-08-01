@@ -175,106 +175,8 @@ _update() {
 
         fi
 }
-#====================================================================#
-# Maintain the System
-#====================================================================#
-# This functions check via Pacman for packages
-# to "Maintain the System".
-# Check if a single Package is installed.
-_isInstalled() {
-    package="$1";
-    check="$(sudo pacman -Qs --color always "${package}" | grep "local" | grep "${package} ")";
-    if [ -n "${check}" ] ; then
-        echo 0; #'0' means 'true' in Bash
-        return; #true
-    fi;
-    echo 1; #'1' means 'false' in Bash
-    return; #false
-}
-# Check if multiple packages are installed.
-_areInstalled() {
-  # The packages that are not installed will be added to this array.
-  toInstall=();
-
-  for pkg; do
-      # If the package IS installed, skip it.
-      if [[ $(_isInstalled "${pkg}") == 0 ]]; then
-          echo "${pkg} is already installed.";
-          continue;
-      fi;
-
-      #Otherwise, add it to the list of packages to install.
-      toInstall+=("${pkg}");
-  done;
-
-  # If no packages were added to the "${toInstall[@]}" array,
-  #     don't do anything and stop this function.
-  if [[ "${toInstall[@]}" == "" ]] ; then
-      echo "All packages are already installed.";
-      return;
-  fi;
-
-  # Otherwise, install all the packages that have been added to the "${toInstall[@]}" array.
-  printf "Packages not installed:\n%s\n" "${toInstall[@]}";
-#  sudo pacman -S "${toInstall[@]}";
-}
-# `_install <pkg>`
-_install() {
-    package="$1";
-
-    # If the package IS installed:
-    if [[ $(_isInstalled "${package}") == 0 ]]; then
-        echo "${package} is already installed.";
-        return;
-    fi;
-
-  # If the package is NOT installed:
-    if [[ $(_isInstalled "${package}") == 1 ]]; then
-        sudo pacman -S "${package}";
-    fi;
-}
-# `_installMany <pkg1> <pkg2> ...`
-# Works the same as `_install` above,
-#     but you can pass more than one package to this one.
-_installMany() {
-    # The packages that are not installed will be added to this array.
-    toInstall=();
-
-    for pkg; do
-        # If the package IS installed, skip it.
-        if [[ $(_isInstalled "${pkg}") == 0 ]]; then
-            echo "${pkg} is already installed.";
-            continue;
-        fi;
-
-        #Otherwise, add it to the list of packages to install.
-        toInstall+=("${pkg}");
-    done;
-
-    # If no packages were added to the "${toInstall[@]}" array,
-    #     don't do anything and stop this function.
-    if [[ "${toInstall[@]}" == "" ]] ; then
-        echo "All packages are already installed.";
-        return;
-    fi;
-
-    # Otherwise, install all the packages that have been added to the "${toInstall[@]}" array.
-    printf "Packages not installed:\n%s\n" "${toInstall[@]}";
-    sudo pacman -S "${toInstall[@]}";
-}
-
-package="meld";
-# Use this to install a single package.
-#_install "${package}";
-
-packages=("snapd" "flatpak");
-# Use this to install many packages.
-#_installMany "${packages[@]}";
-#Or,
-#_installMany "lshw" "inkscape"
-#====================================================================#
-#
-# check for database lock file before update
+# =======================
+# Check for database lock file before update
 _db_check(){
     echo " checking for database lock file ... "
 	if [[ -f /var/lib/pacman/db.lck ]]
@@ -284,7 +186,8 @@ _db_check(){
 	fi
 
 }
-# start full system update
+# =======================
+# Start full system update
 _update_full(){
         # check for "pacman-mirrors" or "reflector" packages. one of those is needed!
         if [[ -f /usr/bin/pacman-mirrors ]] || [[ -f /usr/bin/reflector ]]
@@ -334,12 +237,12 @@ _update_full(){
 
         echo " checking systemctl ..."
         # "LC_ALL=C" forces the output to use english language. this is important, if the output is queried.
-        if [[ "$( LC_ALL=C systemctl --failed |  awk 'NR==1 {print $1}' )" == "UNIT" ]]
+        if [[ "$( LC_ALL=C systemctl is-system-running )" != "running" ]]
         then
             echo -e " \e[41m The following systemd service(s) have failed. Please fix them manually. \e[0m"
             echo -e " \e[1m Display detailed information about a systemd service with: systemctl status <SYSTEMD SERVICE NAME> \e[0m"
             echo
-            systemctl --failed
+            systemctl list-units --state=failed
             echo
         fi
         echo ""
@@ -398,7 +301,7 @@ _update_full(){
             fi
         fi
 
-
+        echo ""
         echo " checking for packages moved to the AUR ..."
         local pkg
         # "pacman -Qqm" lists all packages, which are not from the system repositories.  "pacman -Qqem" lists all files, which were explicitly installed, but are not present in the system repositories.
@@ -477,8 +380,24 @@ _update_full(){
           echo ""
         fi
 }
-#====================================================================#
+# =======================
 # Pacdiff
+# Check if Meld is installed
+_meld() {
+    if [ -f /usr/bin/meld ] # If file exists
+    then
+    echo " meld is already installed." 
+    else
+    echo "installing Meld ..." # Install Message
+    if [ -f /var/lib/pacman/db.lck ] # If file exists
+    then
+      echo "Pacman seems to be in use, Meld was not installed!" # Not installed Message
+    else
+      sudo pacman -Sy meld # Else install package
+    fi
+  fi
+}
+#
 _pacdiff() {
         echo " sudo pacdiff ..."
         #set +u                                                                     # temporarily disable strict mode for environment variables
@@ -492,87 +411,43 @@ _pacdiff() {
 
         echo ""
 }
-#====================================================================#
-# Snap update if snapd is installed
-_isInstalled_snapd() {
-    package="snapd";
-    check="$(sudo pacman -Qs --color always "${package}" | grep "local" | grep "${package} ")";
-    if [ -n "${check}" ] ; then
-        echo 0; #'0' means 'true' in Bash
-        return; #true
-    fi;
-    echo 1; #'1' means 'false' in Bash
-    return; #false
-}
-# `_install <pkg>`
+# =======================
+# Snap update if "snapd" package is installed
 _snapd() {
-    package="snapd";
-
-    # If the package IS installed:
-    if [[ $(_isInstalled_snapd "${package}") == 0 ]]; then
-        echo -e "\e[1m Updating Snaps...\e[0m";
-        sudo snap refresh;
-        echo "";
-        return;
-    fi;
-
-    # If the package is NOT installed:
-    if [[ $(_isInstalled_snapd "${package}") == 1 ]]; then
-        echo "${package} is not installed.";
-        echo "";
-    fi;
+    if [[ -f /usr/bin/snap ]]
+    then
+        echo " updating snap packages ..."
+        sudo snap refresh
+        echo ""
+    fi
 }
-# list snap
+# list installed snap packages
 _snap_list() {
-    package="snapd";
-
-    # If the package IS installed:
-    if [[ $(_isInstalled_snapd "${package}") == 0 ]]; then
+    if [[ -f /usr/bin/snap ]]
+    then
         echo;
         echo -e "\e[1m Installed Snaps: \e[0m";
         snap list;
-        return;
-    fi;
+    fi
 }
-#====================================================================#
-# Flatpak update if it is installed
-_isInstalled_flatpak() {
-    package="flatpak";
-    check="$(sudo pacman -Qs --color always "${package}" | grep "local" | grep "${package} ")";
-    if [ -n "${check}" ] ; then
-        echo 0; #'0' means 'true' in Bash
-        return; #true
-    fi;
-    echo 1; #'1' means 'false' in Bash
-    return; #false
-}
-# `_install <pkg>`
+# =======================
+# Flatpak update if "flatpak" package is installed
 _flatpak() {
-    package="flatpak";
-
-    # If the package IS installed:
-    if [[ $(_isInstalled_flatpak "${package}") == 0 ]]; then
-        echo -e "\e[1m Updating Flatpaks...\e[0m";
+    if [[ -f /usr/bin/flatpak ]]
+    then
+        echo " updating flatpak packages ...";
         flatpak update -y;
         echo "";
-        echo -e "\e[1m Uninstalling Orphaned Flatpaks...\e[0m";
+        echo -e " removing orphaned flatpak packages ...";
         flatpak uninstall --unused --delete-data -y;
         echo "";
         return;
     fi;
-
-    # If the package is NOT installed:
-    if [[ $(_isInstalled_flatpak "${package}") == 1 ]]; then
-        echo "${package} is not installed.";
-        echo "";
-    fi;
 }
-# list flatpak
+# list installed flatpak packages
 _flatpak_list() {
-    package="flatpak";
-
-    # If the package IS installed:
-    if [[ $(_isInstalled_flatpak "${package}") == 0 ]]; then
+    if [[ -f /usr/bin/flatpak ]]
+    then
         echo -e "\e[1m Installed Flatpaks: \e[0m";
         flatpak list;
         return;
@@ -585,7 +460,7 @@ echo;
 time {
 _db_check;
 _update_full;
-_install "meld";
+_meld;
 _pacdiff;
 _flatpak;
 _snapd;
