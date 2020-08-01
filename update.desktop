@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Icon=update
+Name=Update
+Name[de]=Update
+Name[de_DE]=Update
+Comment=Update the system
+Exec=update.sh
+Terminal=true
+StartupNotify=true
+Categories=System;Monitor;ConsoleOnly;
+Keywords=system;update;maintain

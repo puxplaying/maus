@@ -295,7 +295,6 @@ _update_full(){
                     echo -e " \e[1m They are orphaned and will never be updated. \e[0m"
                     echo -e " \e[41m It is recommended to remove these packages carefully: \e[0m"
                     echo "$pkg"
-                    echo ""
                 fi
 
             fi
@@ -470,4 +469,8 @@ echo "";
 echo -e "\e[1m Update Completed in: \e[0m";
 #notify-send "Update Complete";
 }
+echo ""
+echo -e " \e[41m Press ENTER to exit \e[0m"
+# wait for input, e.g. by pressing ENTER:
+read -r
 exit
