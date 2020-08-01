@@ -17,5 +17,5 @@ package () {
 	cd "$srcdir/$pkgname-$pkgver"
 	install -Dm644 "update.desktop" "$pkgdir/usr/share/applications/update.desktop"
 	install -Dm644 "update.png" "$pkgdir/usr/share/pixmaps/update.png"
-	install -Dm755 "$srcdir/$pkgname-$pkgver/manjaro_update" "$pkgdir/usr/bin/manjaro_update"
+	install -Dm755 "$srcdir/$pkgname-$pkgver/manjaro-update" "$pkgdir/usr/bin/manjaro-update"
 }
