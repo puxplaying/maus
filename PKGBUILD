@@ -1,6 +1,6 @@
 # Maintainer: puxplaying
 
-pkgname=manjaro_update
+pkgname=manjaro-update
 pkgver=0.1
 pkgrel=1
 pkgdesc="Bash script to update and maintain a Manjaro system"
