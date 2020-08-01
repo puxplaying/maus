@@ -32,3 +32,17 @@ So what is it actually doing?
   - (If Installed) Updates Snaps
   - (If Installed) Lists all installed Flatpaks and Snaps
   - Shows you how long it did take to run this script
+  
+  ---
+  
+  How to use:
+  
+   - Make manjaro-update executable and run with ```./manjaro-update```
+   
+   If you prefer a menu icon and launcher, install it with:
+   
+   - ```sudo pacman -Syu base-devel git```
+   - ```git clone https://github.com/puxplaying/manjaro-update.git```
+   - ```cd manjaro-update```
+   - ```makepkg -srci``` 
+   - Run via ```manjaro-update``` or the menu entry
