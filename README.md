@@ -10,7 +10,7 @@ This script will also install Meld to your system in case it's not installed, fo
 
 In case you don't want it to check for Meld, comment the function at the end of the script.
 ```
-#_install "meld";
+#_meld;
 ```
 
 So what is it actually doing?
