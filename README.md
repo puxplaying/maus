@@ -45,4 +45,4 @@ So what is it actually doing?
    - ```git clone https://github.com/puxplaying/manjaro-update.git```
    - ```cd manjaro-update```
    - ```makepkg -srci``` 
-   - Run via ```manjaro-update``` or the menu entry
+   - Run via ```manjaro-update``` or the **Update** menu entry
