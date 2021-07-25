@@ -18,10 +18,18 @@ SHELL=/usr/bin/bash
 #
 # =======================
 # Update System
+
+# Here, the preferred AUR helper can be set manually by the user. for example, AUR_Helper="trizen" uses Trizen despite any other installed AUR helpers.
+AUR_Helper="$_AUR_HELPER"
+
 # Detect installed AUR helpers and chose one automatically:
 if [[ -z "$AUR_Helper" ]]; then # check, if AUR_Helper variable is empty. more precise: check, if output of "$AUR_Helper" is zero
 
-    if [[ -f /usr/bin/yay ]]; then # check, if /usr/bin/yay file exists (i.e. yay is installed)
+    # Use "Pamac" as the first option to provide the best possible user experience since it can deal with "update conflicts"
+    if [[ -f /usr/bin/pamac ]]; then # check, if /usr/bin/pamac file exists (i.e. pamac is installed)
+        AUR_Helper="pamac"
+
+    elif [[ -f /usr/bin/yay ]]; then
         AUR_Helper="yay"
 
     elif [[ -f /usr/bin/pikaur ]]; then
@@ -38,9 +46,6 @@ if [[ -z "$AUR_Helper" ]]; then # check, if AUR_Helper variable is empty. more p
 
     elif [[ -f /usr/bin/pacaur ]]; then
         AUR_Helper="pacaur"
-
-    elif [[ -f /usr/bin/pamac ]]; then
-        AUR_Helper="pamac"
 
     fi
 fi
