@@ -363,7 +363,7 @@ _meld() {
         if [ -f /var/lib/pacman/db.lck ]; then                        # If file exists
             echo "Pacman seems to be in use, Meld was not installed!" # Not installed Message
         else
-            sudo pacman -Sy meld # Else install package
+            sudo pacman -Syu meld # Else install package
         fi
     fi
 }
