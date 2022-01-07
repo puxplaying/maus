@@ -1,7 +1,7 @@
 # Maintainer: Georg Wagner
 
 pkgname=manjaro-update
-pkgver=0.4
+pkgver=0.5
 pkgrel=1
 pkgdesc="Bash script to update and maintain a Manjaro system"
 arch=(any)
