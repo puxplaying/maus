@@ -44,4 +44,13 @@ So what is it actually doing?
    - ```git clone https://github.com/puxplaying/manjaro-update.git```
    - ```cd manjaro-update```
    - ```makepkg -srci``` 
-   - Run via ```manjaro-update``` or the **Update** menu entry
+   
+   After installation:
+   
+   - click on the *Update* icon in the menu
+   
+     <img src="https://github.com/puxplaying/manjaro-update/blob/master/update.png" alt="update" width="50" height="50" />
+
+   - or run it via ```manjaro-update```
+   
+  
