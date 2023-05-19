@@ -10,15 +10,21 @@ SHELL=/usr/bin/bash
 #  You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
-# =======================
-# This Bash script was made to update and maintain a Manjaro system with Pacman and
-# the alternative package managers - Pamac, Snap and Flatpak in a automatic
-# manner, with as little as necessary user intervention required.
-# It makes use of the functionality of PacUI for the system maintance.
-#
-# =======================
-# Update System
+# ================================================================================= #
+# This Bash script was made to update and maintain a Manjaro system with Pacman and #
+# the alternative package managers - Pamac, Snap and Flatpak in a automatic         #
+# manner, with as little as necessary user intervention required.                   #
+# It makes use of the functionality of PacUI for the system maintance.              #
+# ================================================================================= #
 
+# Function to handle Ctrl+C
+trap killproc INT
+function killproc() {
+    echo -e "\n**** Received SIGINT, aborting! ****\n"
+    kill -- -$$ && exit 2
+}
+
+# Update System
 # Here, the preferred AUR helper can be set manually by the user. for example, AUR_Helper="trizen" uses Trizen despite any other installed AUR helpers.
 AUR_Helper="$_AUR_HELPER"
 
@@ -47,9 +53,12 @@ if [[ -z "$AUR_Helper" ]]; then # check, if AUR_Helper variable is empty. more p
     elif [[ -f /usr/bin/pacaur ]]; then
         AUR_Helper="pacaur"
 
+    elif [[ -f /usr/bin/paru ]]; then
+        AUR_Helper="paru"
+
     fi
 fi
-#
+
 _update() {
     # define local variable, which indicates whether the installation process was successful or not.
     local install_successful
@@ -115,6 +124,15 @@ _update() {
             install_successful=false
         fi
 
+    elif [[ "$AUR_Helper" == "paru" ]]; then
+
+        # execute "paru --sudoloop -Syu"
+        if (paru --sudoloop -Syu --color always); then
+            install_successful=true
+        else
+            install_successful=false
+        fi
+
     else
 
         if (sudo pacman -Syu --color always); then
@@ -156,7 +174,7 @@ _update() {
 
     fi
 }
-# =======================
+
 # Check for database lock file before update
 _db_check() {
     #echo " checking for database lock file before system update ... "
@@ -165,7 +183,7 @@ _db_check() {
         echo -e " \e[41m Database lock found, do you want to remove it? [Y|n] \e[0m"
         read -r -n 1 -e answer # save user input in "answer" variable (only accept 1 character as input)
 
-        case ${answer:-n} in     # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "y".
+        case ${answer:-n} in     # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "no".
         y | Y | yes | YES | Yes) # do this, if "answer" is y or Y or yes or YES or Yes
             echo " removing database lock file ... "
             sudo rm /var/lib/pacman/db.lck
@@ -177,13 +195,13 @@ _db_check() {
         esac # end of "case" loop
     fi
 }
-# =======================
+
 # Start full system update
 _update_full() {
     # check for "pacman-mirrors" or "reflector" packages. one of those is needed!
-    if [[ -f /usr/bin/pacman-mirrors ]] || [[ -f /usr/bin/reflector ]]; then
+    if [ -x "$(command -v pacman-mirrors)" ] || [ -x "$(command -v reflector)" ]; then
 
-        echo " choosing fastest mirror (which can take a while) and updating the system ..."
+        echo " updating the system ..."
         # removing partially downloaded files from pacman cache. this can prevent pacman updates
         if [[ -n "$(sudo find /var/cache/pacman/pkg/ -iname "*.part" -type f)" ]]; then # check, whether outupt of sudo find "$cache" -type f -iname "*.part" is non-zero (i.e. not empty). "sudo find "$cache" -type f -iname "*.part"" searches partially downloaded files (file name ends with ".part") in pacman cache.
             echo " deleting partially downloaded packages from cache ..."
@@ -191,32 +209,47 @@ _update_full() {
             echo ""
         fi
         echo ""
-        if [[ -f /usr/bin/pacman-mirrors ]]; then  # checks, whether file "pacman-mirrors" exists
-            if (sudo pacman-mirrors -g -f 3); then # choose mirrors server (with up-to-date packages) with lowest ping from all available mirrors and sync database.
+        if [ -x "$(command -v pacman-mirrors)" ]; then # checks, whether file "pacman-mirrors" exists
+            if (sudo pacman-mirrors -g -f 3); then     # choose mirrors server (with up-to-date packages) with lowest ping from all available mirrors and sync database.
                 sudo pacman -Syyuu --noconfirm
                 _update
             fi
 
-        elif [[ -f /usr/bin/reflector ]]; then # checks, whether file "reflector" exists
+        elif [ -x "$(command -v reflector)" ]; then # checks, whether file "reflector" exists
 
-            if (sudo reflector --verbose --protocol https,ftps --age 5 --sort rate --save /etc/pacman.d/mirrorlist); then # If it does exists, then the mirror will sort by it
-                sleep 10 && sudo pacman -Syyuu
-            fi
+            echo -e " \e[41m Do you want to update the mirrorlist with reflector? [Y|n] \e[0m"
+            read -r -n 1 -e answer # save user input in "answer" variable (only accept 1 character as input)
+
+            case ${answer:-n} in                                                                                                                                                  # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "no".
+            y | Y | yes | YES | Yes)                                                                                                                                              # do this, if "answer" is y or Y or yes or YES or Yes
+                if (sudo reflector --verbose --protocol https --age 6 --delay 6 --sort rate --connection-timeout 2 --score 30 --fastest 10 --save /etc/pacman.d/mirrorlist); then # If it does exists, then the mirror will sort by it
+                    sleep 10 && sudo pacman -Syyuu --noconfirm
+                    _update
+                fi
+                ;;
+            *) # do this in all other cases
+                sudo pacman -Syyuu --noconfirm
+                _update
+                ;;
+            esac # end of "case" loop
+
         fi
         echo ""
     fi
 
     echo " searching orphans ..."
     if [[ "$AUR_Helper" == "yay" ]]; then
-        yay -Yc # do orphan cleaning with yay
+        yay -Yc                                                             # do orphan cleaning with yay
     elif [[ "$AUR_Helper" == "pamac" ]]; then
-        pamac remove -o                    # do orphan cleaning with pamac
-    else                                   # do this for all other AUR helpers:
-        if [[ -n "$(pacman -Qdt)" ]]; then # only run the following commands, if output of "pacman -Qdt" is not empty.
-            pacman -Qdt --color always     # display orphaned packages
+        pamac remove -o                                                     # do orphan cleaning with pamac
+    elif [[ "$AUR_Helper" == "paru" ]]; then
+        paru -c                                                             # do orphan cleaning with paru
+    else                                                                    # do this for all other AUR helpers:
+        if [[ -n "$(pacman -Qdt)" ]]; then                                  # only run the following commands, if output of "pacman -Qdt" is not empty.
+            pacman -Qdt --color always                                      # display orphaned packages
             # ask, whether to remove the displayed orphaned packages:
             echo -e " \e[41m Do you want to remove these orphaned packages? [Y|n] \e[0m"
-            read -r -n 1 -e answer # save user input in "answer" variable (only accept 1 character as input)
+            read -r -n 1 -e answer                                          # save user input in "answer" variable (only accept 1 character as input)
 
             case ${answer:-y} in                                            # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "y".
             y | Y | yes | YES | Yes)                                        # do this, if "answer" is y or Y or yes or YES or Yes
@@ -352,8 +385,7 @@ _update_full() {
         echo ""
     fi
 }
-# =======================
-# Pacdiff
+
 # Check if Meld is installed
 _meld() {
     if [ -f /usr/bin/meld ]; then # If file exists
@@ -367,7 +399,8 @@ _meld() {
         fi
     fi
 }
-#
+
+# Run pacdiff
 _pacdiff() {
     echo " sudo pacdiff ..."
     if [[ -n $DIFFPROG ]]; then # this if-condition avoids error message when $DIFFPROG is not set/empty
@@ -378,19 +411,20 @@ _pacdiff() {
 
     echo ""
 }
-# =======================
-# Snap update if "snapd" package is installed
+
+# Update snaps if installed
 _snapd() {
-    if [[ -f /usr/bin/snap ]]; then
+    if [ -x "$(command -v snap)" ]; then
         echo " updating snap packages ..."
         sudo snap refresh
+        sudo snap set system refresh.retain=2
         echo ""
     fi
 }
-# =======================
-# Flatpak update if "flatpak" package is installed
+
+# Update Flatpaks if installed and clean up unused Flatpaks
 _flatpak() {
-    if [[ -f /usr/bin/flatpak ]]; then
+    if [ -x "$(command -v flatpak)" ]; then
         echo " updating flatpak packages ..."
         flatpak update -y
         echo ""
@@ -400,6 +434,7 @@ _flatpak() {
         return
     fi
 }
+
 ########################
 ### Run the Script.. ###
 ########################
