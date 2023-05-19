@@ -1,6 +1,6 @@
 # manjaro-update
 
-This Bash script was made to update and maintain a Manjaro system with Pacman 
+This Bash script was made to update and maintain a Manjaro or Arch system with Pacman 
 and the alternative package managers - Pamac, Snap and Flatpak in a automatic manner, 
 with as little as necessary user intervention required.
 It makes use of the functionality of PacUI 
@@ -18,7 +18,7 @@ So what is it actually doing?
   - Check for database lock file and prompt for removal in case it's present
   - Remove partially downloaded packages
   - Mirrorsync and system update via Pacman
-  - AUR update via installed AUR helper: pamac, yay, pikaur, aurman, pakku, trizen, pacaur
+  - AUR update via installed AUR helper: pamac, yay, pikaur, aurman, pakku, trizen, pacaur, paru
   - Search for orphaned packages and prompt for removal
   - Check for failed systemd service(s)
   - Check for broken symlinks
