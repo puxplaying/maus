@@ -1,4 +1,4 @@
-# manjaro-update
+# maus
 
 This Bash script was made to update and maintain a Manjaro or Arch system with Pacman 
 and the alternative package managers - Pamac, Snap and Flatpak in a automatic manner, 
@@ -36,21 +36,21 @@ So what is it actually doing?
   
   How to use:
   
-   - Make manjaro-update executable and run with ```./manjaro-update```
+   - Make maus executable and run with ```./maus```
    
    If you prefer a menu icon and launcher, install it with:
    
    - ```sudo pacman -Syu base-devel git```
-   - ```git clone https://github.com/puxplaying/manjaro-update.git```
-   - ```cd manjaro-update```
+   - ```git clone https://github.com/puxplaying/maus.git```
+   - ```cd maus```
    - ```makepkg -srci``` 
    
    After installation:
    
    - click on the *Update* icon in the menu
    
-     <img src="https://github.com/puxplaying/manjaro-update/blob/master/update.png" alt="update" width="50" height="50" />
+     <img src="https://github.com/puxplaying/maus/blob/master/update.png" alt="update" width="50" height="50" />
 
-   - or run it via ```manjaro-update```
+   - or run it via ```maus```
    
   
