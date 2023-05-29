@@ -11,8 +11,9 @@ depends=('pacman' 'sudo' 'bash')
 makedepends=('git')
 optdepends=('meld: Needed for diff operations'
 	'reflector: Needed for Arch mirrorlist update')
+conflicts=(manjaro-update)
 source=("$pkgname-$pkgver.tar.gz::$url/archive/$pkgver.tar.gz")
-sha256sums=('f2776096079045ed640a818d4c5da3fdbe9099f5fb03d1f829ce51840cd644e1')
+sha256sums=('903d76ae484281de7d4447f1dff0374c42639736adf5f185d9f4b11bc0ad7420')
 
 package() {
 	cd "$srcdir/$pkgname-$pkgver"
