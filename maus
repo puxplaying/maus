@@ -210,9 +210,10 @@ _update_full() {
         fi
         echo ""
         if [ -x "$(command -v pacman-mirrors)" ]; then # checks, whether file "pacman-mirrors" exists
-            if (sudo pacman-mirrors -g -f 3); then     # choose mirrors server (with up-to-date packages) with lowest ping from all available mirrors and sync database.
-                sudo pacman -Syyuu --noconfirm
-                _update
+            if (sudo pacman-mirrors -f 3); then        # choose mirrors server and sync database.
+                sleep 2                                # try to give it enough time to write the mirror-list, to avoid 404 errors
+                sudo pacman -Syyuu --noconfirm         # start full sync, system update/downgrade
+                _update                                # check for AUR helpers
             fi
 
         elif [ -x "$(command -v reflector)" ]; then # checks, whether file "reflector" exists
@@ -239,17 +240,17 @@ _update_full() {
 
     echo " searching orphans ..."
     if [[ "$AUR_Helper" == "yay" ]]; then
-        yay -Yc                                                             # do orphan cleaning with yay
+        yay -Yc # do orphan cleaning with yay
     elif [[ "$AUR_Helper" == "pamac" ]]; then
-        pamac remove -o                                                     # do orphan cleaning with pamac
+        pamac remove -o # do orphan cleaning with pamac
     elif [[ "$AUR_Helper" == "paru" ]]; then
-        paru -c                                                             # do orphan cleaning with paru
-    else                                                                    # do this for all other AUR helpers:
-        if [[ -n "$(pacman -Qdt)" ]]; then                                  # only run the following commands, if output of "pacman -Qdt" is not empty.
-            pacman -Qdt --color always                                      # display orphaned packages
+        paru -c                            # do orphan cleaning with paru
+    else                                   # do this for all other AUR helpers:
+        if [[ -n "$(pacman -Qdt)" ]]; then # only run the following commands, if output of "pacman -Qdt" is not empty.
+            pacman -Qdt --color always     # display orphaned packages
             # ask, whether to remove the displayed orphaned packages:
             echo -e " \e[41m Do you want to remove these orphaned packages? [Y|n] \e[0m"
-            read -r -n 1 -e answer                                          # save user input in "answer" variable (only accept 1 character as input)
+            read -r -n 1 -e answer # save user input in "answer" variable (only accept 1 character as input)
 
             case ${answer:-y} in                                            # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "y".
             y | Y | yes | YES | Yes)                                        # do this, if "answer" is y or Y or yes or YES or Yes
