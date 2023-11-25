@@ -1,7 +1,7 @@
 # Maintainer: Georg Wagner <puxplaying_at_gmail_dot_com>
 
 pkgname=maus
-pkgver=1.0
+pkgver=1.1
 pkgrel=1
 pkgdesc="Bash script to update and maintain a Manjaro or Arch system"
 arch=(any)
@@ -13,7 +13,7 @@ optdepends=('meld: Needed for diff operations'
 	'reflector: Needed for Arch mirrorlist update')
 conflicts=(manjaro-update)
 source=("$pkgname-$pkgver.tar.gz::$url/archive/$pkgver.tar.gz")
-sha256sums=('903d76ae484281de7d4447f1dff0374c42639736adf5f185d9f4b11bc0ad7420')
+sha256sums=('34ee877256950ae64438113a4248364cf2bf35f599ea062aa1b9dbda4fd932c7')
 
 package() {
 	cd "$srcdir/$pkgname-$pkgver"
