@@ -52,5 +52,9 @@ So what is it actually doing?
      <img src="https://github.com/puxplaying/maus/blob/master/update.png" alt="update" width="50" height="50" />
 
    - or run it via ```maus```
-   
-  
+
+---
+
+**Note:**
+
+All of my projects which contain a PKGBUILD in the repository, can be automatically kept up to date with [Autogit](https://github.com/puxplaying/autogit).  
