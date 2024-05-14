@@ -10,7 +10,7 @@ This script will also install Meld to your system in case it's not installed, fo
 
 In case you don't want it to check for Meld, comment the function at the end of the script.
 ```
-#_meld;
+#_meld
 ```
 
 So what is it actually doing?
@@ -54,7 +54,3 @@ So what is it actually doing?
    - or run it via ```maus```
 
 ---
-
-**Note:**
-
-All of my projects which contain a PKGBUILD in the repository, can be automatically kept up to date with [Autogit](https://github.com/puxplaying/autogit).  
