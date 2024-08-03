@@ -7,7 +7,7 @@ pkgdesc="Bash script to update and maintain a Manjaro or Arch system"
 arch=(any)
 url="https://github.com/puxplaying/manjaro-update"
 license=('GPL3')
-depends=('pacman' 'sudo' 'bash')
+depends=('pacman' 'pacman-contrib' 'sudo' 'bash')
 makedepends=('git')
 optdepends=('meld: Needed for diff operations'
 	'reflector: Needed for Arch mirrorlist update')
