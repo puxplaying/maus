@@ -52,3 +52,26 @@ So what is it actually doing?
      <img src="https://github.com/puxplaying/maus/blob/master/update.png" alt="update" width="50" height="50" />
 
    - or run it via ```maus```
+
+---
+
+See ```maus -h``` for advanced options:
+
+```
+ Welcome to the Help Page!
+ [maus] runs by default without flags, but also provides advanced options.
+
+ maus [option]:
+
+ -a, --aur         - [SET AUR_HELPER]
+                     Set the desired AUR Helper manually
+
+ -i, --interactive - [INTERACTIVE MODE]
+                     Guided run with more options, includig the (-a, --aur) flag
+
+ -l, --list        - [LIST AUR_HELPER]
+                     List all supported AUR Helper
+
+ -h, --help        - This Help Text
+```
+
