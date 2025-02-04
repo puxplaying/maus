@@ -17,48 +17,53 @@ SHELL=/usr/bin/bash
 # It makes use of the functionality of PacUI for the system maintance.              #
 # ================================================================================= #
 
-# Function to handle Ctrl+C
+# Traps (ctrl+c)
 trap killproc INT
 function killproc() {
     echo -e "\n**** Received SIGINT, aborting! ****\n"
     kill -- -$$ && exit 2
 }
 
+# Local Variables:
+SYMLINKCHECK=1
+NOCONFIRMFLAG="0"
+
 # Update System
 # Here, the preferred AUR helper can be set manually by the user. for example, AUR_Helper="trizen" uses Trizen despite any other installed AUR helpers.
-AUR_Helper="$_AUR_HELPER"
+AUR_Helper=""
 
-# Detect installed AUR helpers and chose one automatically:
-if [[ -z "$AUR_Helper" ]]; then # check, if AUR_Helper variable is empty. more precise: check, if output of "$AUR_Helper" is zero
+_check_aur_helper() {
+    # Detect installed AUR helpers and chose one automatically:
+    if [[ -z "$AUR_Helper" ]]; then # check, if AUR_Helper variable is empty. more precise: check, if output of "$AUR_Helper" is zero
 
-    # Use "Pamac" as the first option to provide the best possible user experience since it can deal with "update conflicts"
-    if [[ -f /usr/bin/pamac ]]; then # check, if /usr/bin/pamac file exists (i.e. pamac is installed)
-        AUR_Helper="pamac"
+        # Use "Pamac" as the first option to provide the best possible user experience since it can deal with "update conflicts"
+        if [[ -f /usr/bin/pamac ]]; then # check, if /usr/bin/pamac file exists (i.e. pamac is installed)
+            AUR_Helper="pamac"
 
-    elif [[ -f /usr/bin/yay ]]; then
-        AUR_Helper="yay"
+        elif [[ -f /usr/bin/yay ]]; then
+            AUR_Helper="yay"
 
-    elif [[ -f /usr/bin/pikaur ]]; then
-        AUR_Helper="pikaur"
+        elif [[ -f /usr/bin/pikaur ]]; then
+            AUR_Helper="pikaur"
 
-    elif [[ -f /usr/bin/aurman ]]; then
-        AUR_Helper="aurman"
+        elif [[ -f /usr/bin/aurman ]]; then
+            AUR_Helper="aurman"
 
-    elif [[ -f /usr/bin/pakku ]]; then
-        AUR_Helper="pakku"
+        elif [[ -f /usr/bin/pakku ]]; then
+            AUR_Helper="pakku"
 
-    elif [[ -f /usr/bin/trizen ]]; then
-        AUR_Helper="trizen"
+        elif [[ -f /usr/bin/trizen ]]; then
+            AUR_Helper="trizen"
 
-    elif [[ -f /usr/bin/pacaur ]]; then
-        AUR_Helper="pacaur"
+        elif [[ -f /usr/bin/pacaur ]]; then
+            AUR_Helper="pacaur"
 
-    elif [[ -f /usr/bin/paru ]]; then
-        AUR_Helper="paru"
+        elif [[ -f /usr/bin/paru ]]; then
+            AUR_Helper="paru"
 
+        fi
     fi
-fi
-
+}
 _update() {
     # define local variable, which indicates whether the installation process was successful or not.
     local install_successful
@@ -67,31 +72,62 @@ _update() {
     if [[ "$AUR_Helper" == "yay" ]]; then # check, if $AUR_Helper variable is set to "yay". ATTENTION: sometimes, this requires   [[ "$AUR_Helper" == "yay" ]]   and sometimes   test '$AUR_Helper' = "yay"  . i do not know why this is the case.
 
         # execute "yay -Syu" command:
-        if (yay -Syu); then # execute command "yay -Syu". if this command fails "false" is returned and the result is: "if ( false )"
-            # only set $install_successful=true, if the command "yay -Syu" was executed without errors
-            install_successful=true
+        if [[ "$NOCONFIRMFLAG" == "0" ]] || [[ "$NOCONFIRMFLAG" == "1" ]]; then
+            if (yay --sudoloop -Syu --noconfirm); then # execute command "yay -Syu". if this command fails "false" is returned and the result is: "if ( false )"
+                # only set $install_successful=true, if the command "yay -Syu" was executed without errors
+                install_successful=true
+            else
+                install_successful=false
+            fi
         else
-            install_successful=false
+            if [[ "$NOCONFIRMFLAG" == "2" ]]; then
+                if (yay --sudoloop -Syu); then
+                    install_successful=true
+                else
+                    install_successful=false
+                fi
+            fi
         fi
 
     elif [[ "$AUR_Helper" == "pikaur" ]]; then
 
-        if (pikaur -Syu); then
-            install_successful=true
+        if [[ "$NOCONFIRMFLAG" == "0" ]] || [[ "$NOCONFIRMFLAG" == "1" ]]; then
+            if (pikaur -Syu --noconfirm); then
+                install_successful=true
+            else
+                install_successful=false
+            fi
         else
-            install_successful=false
+            if [[ "$NOCONFIRMFLAG" == "2" ]]; then
+                if (pikaur -Syu); then
+                    install_successful=true
+                else
+                    install_successful=false
+                fi
+            fi
         fi
 
     elif [[ "$AUR_Helper" == "aurman" ]]; then
 
-        if (aurman -Syu); then
-            install_successful=true
+        if [[ "$NOCONFIRMFLAG" == "0" ]] || [[ "$NOCONFIRMFLAG" == "1" ]]; then
+            if (aurman -Syu --noconfirm); then
+                install_successful=true
+            else
+                install_successful=false
+            fi
         else
-            install_successful=false
+            if [[ "$NOCONFIRMFLAG" == "2" ]]; then
+                if (aurman -Syu); then
+                    install_successful=true
+                else
+                    install_successful=false
+                fi
+            fi
         fi
 
     elif [[ "$AUR_Helper" == "pakku" ]]; then
 
+        # "pakku" has no flag to skip confirmation dialogs, see: https://github.com/kitsunyan/pakku/issues/16
         if (pakku -Syu); then
             install_successful=true
         else
@@ -100,37 +136,82 @@ _update() {
 
     elif [[ "$AUR_Helper" == "trizen" ]]; then
 
-        if (trizen -Syu); then
-            install_successful=true
+        if [[ "$NOCONFIRMFLAG" == "0" ]] || [[ "$NOCONFIRMFLAG" == "1" ]]; then
+            if (trizen -Syu --noconfirm); then
+                install_successful=true
+            else
+                install_successful=false
+            fi
         else
-            install_successful=false
+            if [[ "$NOCONFIRMFLAG" == "2" ]]; then
+                if (trizen -Syu); then
+                    install_successful=true
+                else
+                    install_successful=false
+                fi
+            fi
         fi
 
     elif [[ "$AUR_Helper" == "pacaur" ]]; then
 
-        if (pacaur -Syu --color always); then
-            install_successful=true
+        if [[ "$NOCONFIRMFLAG" == "0" ]] || [[ "$NOCONFIRMFLAG" == "1" ]]; then
+            if (pacaur -Syu --color always --noconfirm); then
+                install_successful=true
+            else
+                install_successful=false
+            fi
         else
-            install_successful=false
+            if [[ "$NOCONFIRMFLAG" == "2" ]]; then
+                if (pacaur -Syu --color always); then
+                    install_successful=true
+                else
+                    install_successful=false
+                fi
+            fi
         fi
 
     elif [[ "$AUR_Helper" == "pamac" ]]; then
 
         # execute "update -a" command:
-        if (pamac update -a); then # execute command "update -a". if this command fails "false" is returned and the result is: "if ( false )"
-            # only set $install_successful=true, if the command "update -a" was executed without errors
+        if LANG=C pamac checkupdates -a --devel | grep 'up to date'; then # check if updates are available
+            echo "System up to date" &>/dev/null
             install_successful=true
         else
-            install_successful=false
+            if [[ "$NOCONFIRMFLAG" == "0" ]] || [[ "$NOCONFIRMFLAG" == "1" ]]; then
+                if (pamac update -a --devel --no-confirm); then
+                    install_successful=true
+                else
+                    install_successful=false
+                fi
+            else
+                if [[ "$NOCONFIRMFLAG" == "2" ]]; then
+                    if (pamac update -a --devel); then
+                        install_successful=true
+                    else
+                        install_successful=false
+                    fi
+                fi
+            fi
+
         fi
 
     elif [[ "$AUR_Helper" == "paru" ]]; then
 
         # execute "paru --sudoloop -Syu"
-        if (paru --sudoloop -Syu --color always); then
-            install_successful=true
+        if [[ "$NOCONFIRMFLAG" == "0" ]] || [[ "$NOCONFIRMFLAG" == "1" ]]; then
+            if (paru --sudoloop -Syu --color always --noconfirm); then
+                install_successful=true
+            else
+                install_successful=false
+            fi
         else
-            install_successful=false
+            if [[ "$NOCONFIRMFLAG" == "2" ]]; then
+                if (paru --sudoloop -Syu --color always); then
+                    install_successful=true
+                else
+                    install_successful=false
+                fi
+            fi
         fi
 
     else
@@ -180,7 +261,7 @@ _db_check() {
     #echo " checking for database lock file before system update ... "
     if [[ -f /var/lib/pacman/db.lck ]]; then
         # ask, whether to remove the database lock:
-        echo -e " \e[41m Database lock found, do you want to remove it? [Y|n] \e[0m"
+        echo -e " \e[41m Database lock found, do you want to remove it? [Y|n]\e[0m"
         read -r -n 1 -e answer # save user input in "answer" variable (only accept 1 character as input)
 
         case ${answer:-n} in     # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "no".
@@ -190,7 +271,7 @@ _db_check() {
             ;;
         *) # do this in all other cases
             echo -e " \e[1m Database lock was not removed, exiting ...\e[0m"
-            exit
+            exit 3
             ;;
         esac # end of "case" loop
     fi
@@ -208,32 +289,27 @@ _update_full() {
             sudo find /var/cache/pacman/pkg/ -iname "*.part" -exec rm {} \;
             echo ""
         fi
-        echo ""
-        if [ -x "$(command -v pacman-mirrors)" ]; then # checks, whether file "pacman-mirrors" exists
-            if (sudo pacman-mirrors -f 3); then        # choose mirrors server and sync database.
-                sleep 2                                # try to give it enough time to write the mirror-list, to avoid 404 errors
-                sudo pacman -Syyuu --noconfirm         # start full sync, system update/downgrade
-                _update                                # check for AUR helpers
-            fi
 
-        elif [ -x "$(command -v reflector)" ]; then # checks, whether file "reflector" exists
-
-            echo -e " \e[41m Do you want to update the mirrorlist with reflector? [Y|n] \e[0m"
-            read -r -n 1 -e answer # save user input in "answer" variable (only accept 1 character as input)
-
-            case ${answer:-n} in                                                                                                                                                  # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "no".
-            y | Y | yes | YES | Yes)                                                                                                                                              # do this, if "answer" is y or Y or yes or YES or Yes
-                if (sudo reflector --verbose --protocol https --age 6 --delay 6 --sort rate --connection-timeout 2 --score 30 --fastest 10 --save /etc/pacman.d/mirrorlist); then # If it does exists, then the mirror will sort by it
-                    sleep 10 && sudo pacman -Syyuu --noconfirm
-                    _update
+        if [[ "$INTERACTIVEMODE" == "1" ]]; then
+            _interactive_update
+        else
+            if [ -x "$(command -v pacman-mirrors)" ]; then # checks, whether file "pacman-mirrors" exists
+                echo ""
+                if (sudo pacman-mirrors -f 3); then # choose mirrors server and sync database.
+                    echo ""
+                    sleep 2                        # try to give it enough time to write the mirror-list, to avoid 404 errors
+                    sudo pacman -Syyuu --noconfirm # check for updates and start full sync, system update/downgrade
+                    _update                        # check for AUR helpers
                 fi
-                ;;
-            *) # do this in all other cases
-                sudo pacman -Syyuu --noconfirm
-                _update
-                ;;
-            esac # end of "case" loop
 
+            elif [ -x "$(command -v reflector)" ]; then                                                                                                                           # checks, whether file "reflector" exists
+                if (sudo reflector --verbose --protocol https --age 6 --delay 6 --sort rate --connection-timeout 2 --score 30 --fastest 10 --save /etc/pacman.d/mirrorlist); then # If it does exists, then the mirror will sort by it
+                    echo ""
+                    sleep 2
+                    sudo pacman -Syyuu --noconfirm # check for updates and start full sync, system update/downgrade
+                    _update                        # check for AUR helpers
+                fi
+            fi
         fi
         echo ""
     fi
@@ -242,7 +318,7 @@ _update_full() {
     if [[ "$AUR_Helper" == "yay" ]]; then
         yay -Yc # do orphan cleaning with yay
     elif [[ "$AUR_Helper" == "pamac" ]]; then
-        pamac remove -o # do orphan cleaning with pamac
+        pamac remove -o --no-confirm # do orphan cleaning with pamac
     elif [[ "$AUR_Helper" == "paru" ]]; then
         paru -c                            # do orphan cleaning with paru
     else                                   # do this for all other AUR helpers:
@@ -275,12 +351,13 @@ _update_full() {
     fi
     echo ""
 
-    echo " checking symlinks ..."
-    if [[ -n "$(sudo find -xtype l)" ]]; then # only run, if output of "sudo find -xtype l -print" is not empty
-        #echo -e " \e[41m The following symbolic links are broken, please fix them manually: \e[0m"
-        echo -e "\e[1m\e[32m==>\e[0m \e[1mThe following symbolic links are broken, please fix them manually:\e[0m"
-        sudo find -xtype l
-        echo ""
+    if [[ "$SYMLINKCHECK" == "1" ]]; then
+        echo " checking symlinks ..."
+        if [[ -n "$(sudo find -xtype l)" ]]; then # only run, if output of "sudo find -xtype l -print" is not empty
+            echo -e "\e[1m\e[32m==>\e[0m \e[1mThe following symbolic links are broken, please fix them manually:\e[0m"
+            sudo find -xtype l
+            echo ""
+        fi
     fi
 
     echo " checking consistency of local repository ..."
@@ -403,7 +480,7 @@ _meld() {
 
 # Run pacdiff
 _pacdiff() {
-    echo " sudo pacdiff ..."
+    echo " checking pacdiff ..."
     if [[ -n $DIFFPROG ]]; then # this if-condition avoids error message when $DIFFPROG is not set/empty
         sudo -E pacdiff
     else
@@ -436,22 +513,210 @@ _flatpak() {
     fi
 }
 
+# Ask if Symlinks should be checked (interactive mode)
+_symlinkchecker() {
+    if [[ "$INTERACTIVEMODE" == "1" ]]; then
+        echo -e "\e[1m Do you want to also check for broken symbolic links, which can take longer? [Y|n]\e[0m"
+        read -r -n 1 -e answer # save user input in "answer" variable (only accept 1 character as input)
+
+        case ${answer:-n} in # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "no".
+        y | Y)               # do this, if "answer" is y or Y
+            SYMLINKCHECK=1
+            ;;
+        *) # do this in all other cases
+            # if "answer" is empty, display default text
+            if [ -z "$answer" ]; then
+                echo " default: No"
+            fi
+            SYMLINKCHECK=0
+            ;;
+        esac # end of "case" loop
+        echo ""
+    fi
+}
+
+# Ask if "--noconfirm" should be enabled (interactive mode)
+_noconfirmcheck() {
+    if [[ "$INTERACTIVEMODE" == "1" ]]; then
+        echo -e "\e[1m Do you want to skip confirmation dialogs, enable \"noconfirm\"? [Y|n]\e[0m"
+        read -r -n 1 -e answer # save user input in "answer" variable (only accept 1 character as input)
+
+        case ${answer:-n} in # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "no".
+        y | Y)               # do this, if "answer" is y or Y
+            NOCONFIRMFLAG="1"
+            ;;
+        *) # do this in all other cases
+            # if "answer" is empty, display default text
+            if [ -z "$answer" ]; then
+                echo " default: No"
+                NOCONFIRMFLAG="2"
+            fi
+            ;;
+        esac # end of "case" loop
+        echo ""
+    fi
+}
+
+_interactive_update() {
+    if [ -x "$(command -v pacman-mirrors)" ]; then # checks, whether file "pacman-mirrors" exists
+
+        echo -e "\e[1m Do you want to update the mirrorlist with \"pacman-mirrors\"? [Y|n]\e[0m"
+        read -r -n 1 -e answer # save user input in "answer" variable (only accept 1 character as input)
+
+        case ${answer:-n} in                    # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "no".
+        y | Y)                                  # do this, if "answer" is y or Y
+            if (sudo pacman-mirrors -f 3); then # choose mirrors server and sync database.
+                echo ""
+                sleep 2 # try to give it enough time to write the mirror-list, to avoid 404 errors
+                # check for updates and start full sync, system update/downgrade
+                if [[ "$NOCONFIRMFLAG" == "1" ]]; then
+                    sudo pacman -Syyuu --noconfirm
+                else
+                    sudo pacman -Syyuu
+                fi
+                _update # check for AUR helpers
+            fi
+            ;;
+        *) # do this in all other cases
+            # if "answer" is empty, display default text
+            if [ -z "$answer" ]; then
+                echo " default: No"
+            fi
+            echo ""
+            # check for updates and start full sync, system update/downgrade
+            if [[ "$NOCONFIRMFLAG" == "1" ]]; then
+                sudo pacman -Syyuu --noconfirm
+            else
+                sudo pacman -Syyuu
+            fi
+            _update # check for AUR helpers
+            ;;
+        esac # end of "case" loop
+
+    elif [ -x "$(command -v reflector)" ]; then # checks, whether file "reflector" exists
+
+        echo -e "\e[1m Do you want to update the mirrorlist with \"reflector\"? [Y|n]\e[0m"
+        read -r -n 1 -e answer # save user input in "answer" variable (only accept 1 character as input)
+
+        case ${answer:-n} in                                                                                                                                                  # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "no".
+        y | Y)                                                                                                                                                                # do this, if "answer" is y or Y
+            if (sudo reflector --verbose --protocol https --age 6 --delay 6 --sort rate --connection-timeout 2 --score 30 --fastest 10 --save /etc/pacman.d/mirrorlist); then # If it does exists, then the mirror will sort by it
+                echo ""
+                sleep 2
+                # check for updates and start full sync, system update/downgrade
+                if [[ "$NOCONFIRMFLAG" == "1" ]]; then
+                    sudo pacman -Syyuu --noconfirm
+                else
+                    sudo pacman -Syyuu
+                fi
+                _update # check for AUR helpers
+            fi
+            ;;
+        *) # do this in all other cases
+            # if "answer" is empty, display default text
+            if [ -z "$answer" ]; then
+                echo " default: No"
+            fi
+            echo ""
+            # check for updates and start full sync, system update/downgrade
+            if [[ "$NOCONFIRMFLAG" == "1" ]]; then
+                sudo pacman -Syyuu --noconfirm
+            else
+                sudo pacman -Syyuu
+            fi
+            _update # check for AUR helpers
+            ;;
+        esac # end of "case" loop
+    fi
+}
+
 ########################
 ### Run the Script.. ###
 ########################
-echo
-time {
-    _db_check
-    _update_full
-    _meld
-    _pacdiff
-    _flatpak
-    _snapd
-    echo -e "\e[1m Elapsed Time: \e[0m"
-    #notify-send "Update Complete";
+_main() {
+    time {
+        echo ""
+        echo " Starting System Maintenance!"
+        _noconfirmcheck
+        _symlinkchecker
+        _check_aur_helper
+        _db_check
+        _update_full
+        _meld
+        _pacdiff
+        _flatpak
+        _snapd
+        echo -e "\e[1m Elapsed Time: \e[0m"
+    }
+    echo ""
+    echo -e " \e[7m Press [ENTER] to exit \e[0m"
+    # wait for input, e.g. by pressing ENTER:
+    read -r
+    exit
 }
-echo ""
-echo -e " \e[41m Press ENTER to exit \e[0m"
-# wait for input, e.g. by pressing ENTER:
-read -r
-exit
+
+# Flags
+while test $# -gt 0; do
+    case "$1" in
+    -h | --help)
+        echo ""
+        echo -e " Welcome to the Help Page!"
+        echo -e " [maus] runs by default without flags, but also provides advanced options."
+        echo ""
+        echo -e " maus [option]:"
+        echo -e ""
+        echo -e " -a, --aur         - [SET AUR_HELPER]"
+        echo -e "                     Set the desired AUR Helper manually"
+        echo ""
+        echo -e " -i, --interactive - [INTERACTIVE MODE]"
+        echo -e "                     Guided run with more options, includig the (-a, --aur) flag"
+        echo ""
+        echo -e " -l, --list        - [LIST AUR_HELPER]"
+        echo -e "                     List all supported AUR Helper"
+        echo ""
+        echo -e " -h, --help        - This Help Text"
+        echo ""
+        exit
+        ;;
+    -a | --aur)
+        echo " Supported AUR Helpers:"
+        echo " pamac | yay | pikaur | aurman | pakku | trizen | pacaur | paru"
+        echo ""
+        echo -e "\e[1m Type in one of the supported AUR Helpers here and press [ENTER]:\e[0m"
+        read -r HELPER
+        if [ -n "$HELPER" ]; then # if variable is not empty
+            AUR_Helper="$HELPER"
+        else
+            echo " no AUR Helper specified, using auto detection ..."
+            AUR_Helper=""
+        fi
+        _main
+        ;;
+    -i | --interactive)
+        INTERACTIVEMODE=1
+        echo " Supported AUR Helpers:"
+        echo " pamac | yay | pikaur | aurman | pakku | trizen | pacaur | paru"
+        echo ""
+        echo -e "\e[1m Type in one of the supported AUR Helpers here and press [ENTER], or leave empty for auto detection:\e[0m"
+        read -r HELPER
+        if [ -n "$HELPER" ]; then # if variable is not empty
+            AUR_Helper="$HELPER"
+        else
+            echo " no AUR Helper specified, using auto detection ..."
+            AUR_Helper=""
+        fi
+        _main
+        ;;
+    -l | --list)
+        echo " Supported AUR Helpers:"
+        echo " pamac | yay | pikaur | aurman | pakku | trizen | pacaur | paru"
+        exit # this "exit" command is needed to prevent the UI from loading!
+        ;;
+    *)
+        echo -e "Wrong Option, Please run \"maus -h\""
+        exit 1
+        ;;
+    esac
+done
+
+_main
