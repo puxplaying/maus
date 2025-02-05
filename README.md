@@ -3,8 +3,8 @@
 This Bash script was made to update and maintain a Manjaro or Arch system with Pacman 
 and the alternative package managers - Pamac, Snap and Flatpak in a automatic manner, 
 with as little as necessary user intervention required.
-It makes use of the functionality of PacUI 
-for the system maintenance. https://github.com/excalibur1234/pacui
+It makes use of the functionality of [PacUI](https://github.com/excalibur1234/pacui) 
+for the system maintenance.
 
 This script will also install ```meld``` to your system in case it's not installed, for the simple reason because it will run a ```sudo pacdiff``` command and use Meld for the diff, if no ```DIFFPROG``` "Environment Variable" was set by the user, otherwise user settings will be used.
 
