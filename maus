@@ -17,6 +17,9 @@ SHELL=/usr/bin/bash
 # It makes use of the functionality of PacUI for the system maintance.              #
 # ================================================================================= #
 
+# Here, the preferred AUR helper can be set manually by the user. for example, AUR_Helper="trizen" uses Trizen despite any other installed AUR helpers.
+AUR_Helper=""
+
 # Traps (ctrl+c)
 trap killproc INT
 function killproc() {
@@ -28,16 +31,14 @@ function killproc() {
 SYMLINKCHECK=1
 NOCONFIRMFLAG="0"
 
-# Update System
-# Here, the preferred AUR helper can be set manually by the user. for example, AUR_Helper="trizen" uses Trizen despite any other installed AUR helpers.
-AUR_Helper=""
-
 _check_aur_helper() {
     # Detect installed AUR helpers and chose one automatically:
-    if [[ -z "$AUR_Helper" ]]; then # check, if AUR_Helper variable is empty. more precise: check, if output of "$AUR_Helper" is zero
+    # check, if AUR_Helper variable is empty. more precise: check, if output of "$AUR_Helper" is zero
+    if [[ -z "$AUR_Helper" ]]; then
 
         # Use "Pamac" as the first option to provide the best possible user experience since it can deal with "update conflicts"
-        if [[ -f /usr/bin/pamac ]]; then # check, if /usr/bin/pamac file exists (i.e. pamac is installed)
+        # check, if /usr/bin/pamac file exists (i.e. pamac is installed)
+        if [[ -f /usr/bin/pamac ]]; then
             AUR_Helper="pamac"
 
         elif [[ -f /usr/bin/yay ]]; then
@@ -64,16 +65,19 @@ _check_aur_helper() {
         fi
     fi
 }
-_update() {
+_aur_update() {
     # define local variable, which indicates whether the installation process was successful or not.
     local install_successful
     install_successful=false
 
-    if [[ "$AUR_Helper" == "yay" ]]; then # check, if $AUR_Helper variable is set to "yay". ATTENTION: sometimes, this requires   [[ "$AUR_Helper" == "yay" ]]   and sometimes   test '$AUR_Helper' = "yay"  . i do not know why this is the case.
+    # check, if $AUR_Helper variable is set to "yay". ATTENTION: sometimes, this requires [[ "$AUR_Helper" == "yay" ]] and sometimes test '$AUR_Helper' = "yay".
+    # I do not know why this is the case.
+    if [[ "$AUR_Helper" == "yay" ]]; then
 
         # execute "yay -Syu" command:
         if [[ "$NOCONFIRMFLAG" == "0" ]] || [[ "$NOCONFIRMFLAG" == "1" ]]; then
-            if (yay --sudoloop -Syu --noconfirm); then # execute command "yay -Syu". if this command fails "false" is returned and the result is: "if ( false )"
+            # execute command "yay -Syu". if this command fails "false" is returned and the result is: "if ( false )"
+            if (yay --sudoloop -Syu --noconfirm); then
                 # only set $install_successful=true, if the command "yay -Syu" was executed without errors
                 install_successful=true
             else
@@ -173,7 +177,8 @@ _update() {
     elif [[ "$AUR_Helper" == "pamac" ]]; then
 
         # execute "update -a" command:
-        if LANG=C pamac checkupdates -a --devel | grep 'up to date'; then # check if updates are available
+        # check if updates are available
+        if LANG=C pamac checkupdates -a --devel | grep 'up to date'; then
             echo "System up to date" &>/dev/null
             install_successful=true
         else
@@ -227,26 +232,27 @@ _update() {
     # if one of the above update commands has failed, the following if-statement is true:
     if [[ "$install_successful" == "false" ]]; then
 
-        local server
-        # extract mirror/repository server url from /etc/pacman.d/mirrorlist file with command:
-        server="$(grep "^Server =" -m 1 "/etc/pacman.d/mirrorlist" | awk -F '=' '{print $2}' | awk -F '$' '{print $1}')"
-
         # if one of the above update commands has failed, there are multiple points of failure.
         # first, we can force the update, but only for packages from the system repositories and not packages from the AUR. this means, we make sure package updates from system repositories fail:
-        if ! (sudo pacman -Syu --color always); then # the "sudo pacman -Syu --color always" command gets executed in any case in order to check its output.
+        # the "sudo pacman -Syu --color always" command gets executed in any case in order to check its output.
+        if ! (sudo pacman -Syu --color always); then
 
             # now, we are sure there is an active connection to the server/mirror/repository and package updates from there have failed. in this case, we can offer the user to forcefully install updates:
             local answer
             # ask, whether to force update the system and save answer in "answer" variable:
             echo -e " \e[1m Updates from system repositories have failed probably because of file conflicts. \e[0m"
             echo -e " \e[41m Do you want to forcefully overwrite all conflicting files? [y|N] \e[0m"
-            read -r -n 1 -e answer # this "read" command only accepts 1 letter as answer. this feels faster and is enough in this situation.
+            # this "read" command only accepts 1 letter as answer. this feels faster and is enough in this situation.
+            read -r -n 1 -e answer
 
-            case ${answer:-n} in     # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "n".
-            y | Y | yes | Yes | YES) # do this, if "answer" is y or Y or yes or Yes or YES
+            # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "n".
+            case ${answer:-n} in
+            # do this, if "answer" is y or Y or yes or Yes or YES
+            y | Y)
                 sudo pacman -Syu --color always --overwrite='*'
                 ;;
-            *) # do this in all other cases
+            *)
+                # do this in all other cases
                 echo -e " \e[1m Packages have not been updated.\e[0m"
                 ;;
             esac
@@ -258,22 +264,23 @@ _update() {
 
 # Check for database lock file before update
 _db_check() {
-    #echo " checking for database lock file before system update ... "
     if [[ -f /var/lib/pacman/db.lck ]]; then
         # ask, whether to remove the database lock:
         echo -e " \e[41m Database lock found, do you want to remove it? [Y|n]\e[0m"
-        read -r -n 1 -e answer # save user input in "answer" variable (only accept 1 character as input)
+        read -r -n 1 -e answer
 
-        case ${answer:-n} in     # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "no".
-        y | Y | yes | YES | Yes) # do this, if "answer" is y or Y or yes or YES or Yes
+        case ${answer:-n} in
+        y | Y)
             echo " removing database lock file ... "
             sudo rm /var/lib/pacman/db.lck
             ;;
-        *) # do this in all other cases
+        *)
+            # do this in all other cases
             echo -e " \e[1m Database lock was not removed, exiting ...\e[0m"
             exit 3
             ;;
-        esac # end of "case" loop
+            # end of "case" loop
+        esac
     fi
 }
 
@@ -284,7 +291,9 @@ _update_full() {
 
         echo " updating the system ..."
         # removing partially downloaded files from pacman cache. this can prevent pacman updates
-        if [[ -n "$(sudo find /var/cache/pacman/pkg/ -iname "*.part" -type f)" ]]; then # check, whether outupt of sudo find "$cache" -type f -iname "*.part" is non-zero (i.e. not empty). "sudo find "$cache" -type f -iname "*.part"" searches partially downloaded files (file name ends with ".part") in pacman cache.
+        # check, whether outupt of sudo find "$cache" -type f -iname "*.part" is non-zero (i.e. not empty).
+        # "sudo find "$cache" -type f -iname "*.part"" searches partially downloaded files (file name ends with ".part") in pacman cache.
+        if [[ -n "$(sudo find /var/cache/pacman/pkg/ -iname "*.part" -type f)" ]]; then
             echo " deleting partially downloaded packages from cache ..."
             sudo find /var/cache/pacman/pkg/ -iname "*.part" -exec rm {} \;
             echo ""
@@ -293,21 +302,30 @@ _update_full() {
         if [[ "$INTERACTIVEMODE" == "1" ]]; then
             _interactive_update
         else
-            if [ -x "$(command -v pacman-mirrors)" ]; then # checks, whether file "pacman-mirrors" exists
+            # checks, whether file "pacman-mirrors" exists
+            if [ -x "$(command -v pacman-mirrors)" ]; then
                 echo ""
-                if (sudo pacman-mirrors -f 3); then # choose mirrors server and sync database.
+                # choose mirrors server and sync database.
+                if (sudo pacman-mirrors -f 3); then
                     echo ""
-                    sleep 2                        # try to give it enough time to write the mirror-list, to avoid 404 errors
-                    sudo pacman -Syyuu --noconfirm # check for updates and start full sync, system update/downgrade
-                    _update                        # check for AUR helpers
+                    # try to give it enough time to write the mirror-list, to avoid 404 errors
+                    sleep 2
+                    # check for updates and start full sync, system update/downgrade
+                    sudo pacman -Syyuu --noconfirm
+                    # check for AUR helpers
+                    _aur_update
                 fi
 
-            elif [ -x "$(command -v reflector)" ]; then                                                                                                                           # checks, whether file "reflector" exists
-                if (sudo reflector --verbose --protocol https --age 6 --delay 6 --sort rate --connection-timeout 2 --score 30 --fastest 10 --save /etc/pacman.d/mirrorlist); then # If it does exists, then the mirror will sort by it
+            # checks, whether file "reflector" exists
+            # If it does exists, then the mirror will sort by it
+            elif [ -x "$(command -v reflector)" ]; then
+                if (sudo reflector --verbose --protocol https --age 6 --delay 6 --sort rate --connection-timeout 2 --score 30 --fastest 10 --save /etc/pacman.d/mirrorlist); then
                     echo ""
                     sleep 2
-                    sudo pacman -Syyuu --noconfirm # check for updates and start full sync, system update/downgrade
-                    _update                        # check for AUR helpers
+                    # check for updates and start full sync, system update/downgrade
+                    sudo pacman -Syyuu --noconfirm
+                    # check for AUR helpers
+                    _aur_update
                 fi
             fi
         fi
@@ -316,26 +334,38 @@ _update_full() {
 
     echo " searching orphans ..."
     if [[ "$AUR_Helper" == "yay" ]]; then
-        yay -Yc # do orphan cleaning with yay
+        # do orphan cleaning with yay
+        yay -Yc
     elif [[ "$AUR_Helper" == "pamac" ]]; then
-        pamac remove -o --no-confirm # do orphan cleaning with pamac
+        # do orphan cleaning with pamac
+        pamac remove -o --no-confirm
     elif [[ "$AUR_Helper" == "paru" ]]; then
-        paru -c                            # do orphan cleaning with paru
-    else                                   # do this for all other AUR helpers:
-        if [[ -n "$(pacman -Qdt)" ]]; then # only run the following commands, if output of "pacman -Qdt" is not empty.
-            pacman -Qdt --color always     # display orphaned packages
+        # do orphan cleaning with paru
+        paru -c
+    # do this for all other AUR helpers:
+    else
+        # only run the following commands, if output of "pacman -Qdt" is not empty.
+        if [[ -n "$(pacman -Qdt)" ]]; then
+            # display orphaned packages
+            pacman -Qdt --color always
             # ask, whether to remove the displayed orphaned packages:
             echo -e " \e[41m Do you want to remove these orphaned packages? [Y|n] \e[0m"
-            read -r -n 1 -e answer # save user input in "answer" variable (only accept 1 character as input)
+            # save user input in "answer" variable (only accept 1 character as input)
+            read -r -n 1 -e answer
 
-            case ${answer:-y} in                                            # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "y".
-            y | Y | yes | YES | Yes)                                        # do this, if "answer" is y or Y or yes or YES or Yes
-                sudo pacman -Rsn $(pacman -Qqdt) --color always --noconfirm # ATTENTION: (i do not know why but) using quotes (" symbols) around $(...) breaks pacman command for multiple packages
+            # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "y".
+            case ${answer:-y} in
+            # do this, if "answer" is y or Y or yes or YES or Yes
+            y | Y | yes | YES | Yes)
+                # ATTENTION: I do not know why but using quotes " symbols around $(...) breaks pacman command for multiple packages
+                sudo pacman -Rsn $(pacman -Qqdt) --color always --noconfirm
                 ;;
-            *) # do this in all other cases
+            *)
+                # do this in all other cases
                 echo -e " \e[1m Packages have not been removed.\e[0m"
                 ;;
-            esac # end of "case" loop
+                # end of "case" loop
+            esac
         fi
     fi
     echo ""
@@ -353,7 +383,8 @@ _update_full() {
 
     if [[ "$SYMLINKCHECK" == "1" ]]; then
         echo " checking symlinks ..."
-        if [[ -n "$(sudo find -xtype l)" ]]; then # only run, if output of "sudo find -xtype l -print" is not empty
+        # only run, if output of "sudo find -xtype l -print" is not empty
+        if [[ -n "$(sudo find -xtype l)" ]]; then
             echo -e "\e[1m\e[32m==>\e[0m \e[1mThe following symbolic links are broken, please fix them manually:\e[0m"
             sudo find -xtype l
             echo ""
@@ -364,11 +395,13 @@ _update_full() {
     # check, whether "pacman -Dk" command finishes with errors, but do not output anything when this command runs with "&>/dev/null"
     if ! (pacman -Dk &>/dev/null); then
         echo -e " \e[41m The following inconsistencies have been found in your local packages: \e[0m"
-        echo -e "$(pacman -Dk)" # encapsulate "pacman -Dk" in echo command. without this, the strict bash mode would quit pacui whenever "pacman -Dk" encounters an error!
+        # encapsulate "pacman -Dk" in echo command. without this, the strict bash mode would quit pacui whenever "pacman -Dk" encounters an error!
+        echo -e "$(pacman -Dk)"
     fi
     echo ""
 
-    if [[ -n "$AUR_Helper" ]]; then # check, if output of "$AUR_Helper" is non-zero
+    # check, if output of "$AUR_Helper" is non-zero
+    if [[ -n "$AUR_Helper" ]]; then
         echo " checking AUR packages (which can take a while) ..."
         # download AUR package list to /tmp/pacui-aur/packages.
 
@@ -385,7 +418,8 @@ _update_full() {
             pkg="$(comm -23 <(pacman -Qqm | sort) <(sort -u /tmp/pacui-aur/packages))"
 
             # only run the command inside the if-statement, if $pkg variable is not empty
-            if [[ -n "$pkg" ]]; then # checks, if length of string is non-zero ("-n" conditional bash expression is the opposite of "-z" (check, whether length of string is zero))
+            # checks, if length of string is non-zero ("-n" conditional bash expression is the opposite of "-z" (check, whether length of string is zero))
+            if [[ -n "$pkg" ]]; then
                 echo -e "\e[1m\e[32m==>\e[0m \e[1mThe following packages are neither in your package repository nor the AUR.\e[0m"
                 echo -e "\e[1m\e[32m==>\e[0m \e[1mThey are orphaned and will never be updated. \e[0m"
                 echo -e "\e[1m\e[32m==>\e[0m \e[1mIt is recommended to remove these packages carefully: \e[0m"
@@ -403,14 +437,16 @@ _update_full() {
     pkg="$(comm -23 <(pacman -Qqm | sort) <(pacman -Qqem | sort))"
 
     # only run the command inside the if-statement, if $pkg variable is not empty
-    if [[ -n "$pkg" ]]; then # checks, if length of string is non-zero ("-n" conditional bash expression is the opposite of "-z" (check, whether length of string is zero))
+    # checks, if length of string is non-zero ("-n" conditional bash expression is the opposite of "-z" (check, whether length of string is zero))
+    if [[ -n "$pkg" ]]; then
         echo -e "\e[1m\e[32m==>\e[0m \e[1mThe following packages were not explicitly installed and are not part of your system repository.\e[0m"
         echo -e "\e[1m\e[32m==>\e[0m \e[1mIf no important packages depend on them, it is recommended to remove these packages carefully:\e[0m"
         echo "$pkg"
         echo ""
     fi
 
-    if [[ "$(cat /proc/1/comm)" == "systemd" ]]; then # if init system is systemd
+    # if init system is systemd
+    if [[ "$(cat /proc/1/comm)" == "systemd" ]]; then
         echo " cleaning systemd log files ..."
         # limit logs in journalctl to an age of 30 days and a combined size of 50mb
         sudo journalctl --vacuum-size=100M --vacuum-time=30days
@@ -426,14 +462,17 @@ _update_full() {
     echo ""
     # general comment: "pacaur" is currently the only aur helper, which creates its own download directory for aur packages. the content of this download folder can be cleaned with "pacaur -Sc". But "pacaur -Sc" removes too many files and is therefore not used here.
 
-    local installed_kernels # declare local variable
+    # declare local variable
+    local installed_kernels
     # filter installed kernels from boot sector and determine, which package owns that file. this yields the package name of all installed kernels (including kernels from the AUR):
-    installed_kernels="$(pacman -Qq | grep -E '^linux$|^linux-lts$|^linux-zen$|^linux-hardened$|^linux[0-9]*$' | sort -u)" # search for one of the following (hardcoded) package names of the linux kernel within arch linux (linux, linux-lts, linux-zen, or linux-hardened) or manjaro (linuxXY).
+    # search for one of the following (hardcoded) package names of the linux kernel within arch linux (linux, linux-lts, linux-zen, or linux-hardened) or manjaro (linuxXY).
+    installed_kernels="$(pacman -Qq | grep -E '^linux$|^linux-lts$|^linux-zen$|^linux-hardened$|^linux[0-9]*$' | sort -u)"
     # check, whether any installed kernels have been found  (in ARCH linux, no kernels are found, but this is ok, because kernels are not EOLd as in Manjaro)
     if [[ -n "$installed_kernels" ]]; then
         echo " checking installed kernel(s) ..."
 
-        local {available_kernels,eol_kernels} # declare local variables
+        # declare local variables
+        local {available_kernels,eol_kernels}
         # Check if installed kernels are available in repositories and forward it/them to available_kernels variable:
         available_kernels="$(
             for p in $(# ATTENTION: using quotes (" symbols) around $(...) breaks for-loop
@@ -517,20 +556,25 @@ _flatpak() {
 _symlinkchecker() {
     if [[ "$INTERACTIVEMODE" == "1" ]]; then
         echo -e "\e[1m Do you want to also check for broken symbolic links, which can take longer? [Y|n]\e[0m"
-        read -r -n 1 -e answer # save user input in "answer" variable (only accept 1 character as input)
+        # save user input in "answer" variable (only accept 1 character as input)
+        read -r -n 1 -e answer
 
-        case ${answer:-n} in # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "no".
-        y | Y)               # do this, if "answer" is y or Y
+        # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "no".
+        case ${answer:-n} in
+        # do this, if "answer" is y or Y
+        y | Y)
             SYMLINKCHECK=1
             ;;
-        *) # do this in all other cases
+        *)
+            # do this in all other cases
             # if "answer" is empty, display default text
             if [ -z "$answer" ]; then
                 echo " default: No"
             fi
             SYMLINKCHECK=0
             ;;
-        esac # end of "case" loop
+            # end of "case" loop
+        esac
         echo ""
     fi
 }
@@ -539,20 +583,20 @@ _symlinkchecker() {
 _noconfirmcheck() {
     if [[ "$INTERACTIVEMODE" == "1" ]]; then
         echo -e "\e[1m Do you want to skip confirmation dialogs, enable \"noconfirm\"? [Y|n]\e[0m"
-        read -r -n 1 -e answer # save user input in "answer" variable (only accept 1 character as input)
+        read -r -n 1 -e answer
 
-        case ${answer:-n} in # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "no".
-        y | Y)               # do this, if "answer" is y or Y
+        case ${answer:-n} in
+        y | Y)
             NOCONFIRMFLAG="1"
             ;;
-        *) # do this in all other cases
+        *)
             # if "answer" is empty, display default text
             if [ -z "$answer" ]; then
                 echo " default: No"
                 NOCONFIRMFLAG="2"
             fi
             ;;
-        esac # end of "case" loop
+        esac
         echo ""
     fi
 }
@@ -561,23 +605,27 @@ _interactive_update() {
     if [ -x "$(command -v pacman-mirrors)" ]; then # checks, whether file "pacman-mirrors" exists
 
         echo -e "\e[1m Do you want to update the mirrorlist with \"pacman-mirrors\"? [Y|n]\e[0m"
-        read -r -n 1 -e answer # save user input in "answer" variable (only accept 1 character as input)
+        read -r -n 1 -e answer
 
-        case ${answer:-n} in                    # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "no".
-        y | Y)                                  # do this, if "answer" is y or Y
-            if (sudo pacman-mirrors -f 3); then # choose mirrors server and sync database.
+        case ${answer:-n} in
+        y | Y)
+            # choose mirrors server and sync database.
+            if (sudo pacman-mirrors -f 3); then
                 echo ""
-                sleep 2 # try to give it enough time to write the mirror-list, to avoid 404 errors
+                # try to give it enough time to write the mirror-list, to avoid 404 errors
+                sleep 2
                 # check for updates and start full sync, system update/downgrade
                 if [[ "$NOCONFIRMFLAG" == "1" ]]; then
                     sudo pacman -Syyuu --noconfirm
                 else
                     sudo pacman -Syyuu
                 fi
-                _update # check for AUR helpers
+                # check for AUR helpers
+                _aur_update
             fi
             ;;
-        *) # do this in all other cases
+        *)
+            # do this in all other cases
             # if "answer" is empty, display default text
             if [ -z "$answer" ]; then
                 echo " default: No"
@@ -589,18 +637,21 @@ _interactive_update() {
             else
                 sudo pacman -Syyuu
             fi
-            _update # check for AUR helpers
+            # check for AUR helpers
+            _aur_update
             ;;
-        esac # end of "case" loop
+            # end of "case" loop
+        esac
 
-    elif [ -x "$(command -v reflector)" ]; then # checks, whether file "reflector" exists
+    # checks, whether file "reflector" exists
+    elif [ -x "$(command -v reflector)" ]; then
 
         echo -e "\e[1m Do you want to update the mirrorlist with \"reflector\"? [Y|n]\e[0m"
-        read -r -n 1 -e answer # save user input in "answer" variable (only accept 1 character as input)
+        read -r -n 1 -e answer
 
-        case ${answer:-n} in                                                                                                                                                  # if ENTER is pressed, the variable "answer" is empty. if "answer" is empty, its default value is "no".
-        y | Y)                                                                                                                                                                # do this, if "answer" is y or Y
-            if (sudo reflector --verbose --protocol https --age 6 --delay 6 --sort rate --connection-timeout 2 --score 30 --fastest 10 --save /etc/pacman.d/mirrorlist); then # If it does exists, then the mirror will sort by it
+        case ${answer:-n} in
+        y | Y)
+            if (sudo reflector --verbose --protocol https --age 6 --delay 6 --sort rate --connection-timeout 2 --score 30 --fastest 10 --save /etc/pacman.d/mirrorlist); then
                 echo ""
                 sleep 2
                 # check for updates and start full sync, system update/downgrade
@@ -609,10 +660,11 @@ _interactive_update() {
                 else
                     sudo pacman -Syyuu
                 fi
-                _update # check for AUR helpers
+                _aur_update
             fi
             ;;
-        *) # do this in all other cases
+        *)
+            # do this in all other cases
             # if "answer" is empty, display default text
             if [ -z "$answer" ]; then
                 echo " default: No"
@@ -624,9 +676,18 @@ _interactive_update() {
             else
                 sudo pacman -Syyuu
             fi
-            _update # check for AUR helpers
+            _aur_update
             ;;
-        esac # end of "case" loop
+        esac
+    fi
+}
+
+# Function to request sudo privileges
+_request_sudo() {
+    if ! sudo -n true 2>/dev/null; then
+        echo "Please enter your password for sudo:"
+        sudo -v
+        echo ""
     fi
 }
 
@@ -637,6 +698,7 @@ _main() {
     time {
         echo ""
         echo " Starting System Maintenance!"
+        _request_sudo
         _noconfirmcheck
         _symlinkchecker
         _check_aur_helper
@@ -646,6 +708,13 @@ _main() {
         _pacdiff
         _flatpak
         _snapd
+
+        # Refresh sudo periodically if the function takes longer to execute
+        while true; do
+            sleep 60 # Refresh every minute
+            _request_sudo
+        done &
+
         echo -e "\e[1m Elapsed Time: \e[0m"
     }
     echo ""
