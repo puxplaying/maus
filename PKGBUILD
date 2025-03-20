@@ -2,7 +2,7 @@
 # Contributor: Hanzel <https://github.com/HanzelM>
 
 pkgname=maus
-pkgver=1.2
+pkgver=1.3
 pkgrel=1
 pkgdesc="Bash script to update and maintain a Manjaro or Arch system"
 arch=(any)
@@ -21,7 +21,7 @@ optdepends=(
 )
 conflicts=(manjaro-update)
 source=("$pkgname-$pkgver.tar.gz::$url/archive/$pkgver.tar.gz")
-sha256sums=('5a3b7d22c5f2592710d311970dd876301ebe17554a4feced4addc9c4f6f7f9ac')
+sha256sums=('ed252ebdf70b90c4f4323ed3f75adf3ae6f4ae96f563b95b6a9298c343e98580')
 
 package() {
 	cd "$srcdir/$pkgname-$pkgver"
