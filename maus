@@ -11,9 +11,9 @@ SHELL=/usr/bin/bash
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
 # ================================================================================= #
-# This Bash script was made to update and maintain a Manjaro system with Pacman and #
-# the alternative package managers - Pamac, Snap and Flatpak in a automatic         #
-# manner, with as little as necessary user intervention required.                   #
+# This Bash script was made to update and maintain a Manjaro or Arch system with    #
+# Pacman and the alternative package managers - Pamac, Snap and Flatpak in a        #
+# automatic manner, with as little as necessary user intervention required.         #
 # It makes use of the functionality of PacUI for the system maintance.              #
 # ================================================================================= #
 
