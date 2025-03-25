@@ -6,13 +6,6 @@ with as little as necessary user intervention required.
 It makes use of the functionality of [PacUI](https://github.com/excalibur1234/pacui) 
 for the system maintenance.
 
-This script will also install ```meld``` to your system in case it's not installed, for the simple reason because it will run a ```sudo pacdiff``` command and use Meld for the diff, if no ```DIFFPROG``` "Environment Variable" was set by the user, otherwise user settings will be used.
-
-In case you don't want it to check for Meld, comment the function at the end of the script.
-```
-#_meld
-```
-
 So what is it actually doing?
 
   - Check for database lock file and prompt for removal in case it's present
@@ -27,10 +20,10 @@ So what is it actually doing?
   - Clean systemd log files
   - Clean package cache ( Note this will remove all package versions, except the latest 2 )
   - Check for EOL Kernels
-  - Checks if Meld is installed and runs ```sudo pacdiff```
-  - (If Installed) Updates Flatpaks and cleans up unused packages
-  - (If Installed) Updates Snaps and removes all package versions, except the latest 2
-  - Shows you how long it did take to run this script
+  - Check if ```DIFFPROG``` is set, or ```meld``` is installed and run ```pacdiff```
+  - Update Flatpak packages and clean up unused packages - if ```flatpak``` is installed
+  - Update Snap packages and remove all package versions, except the latest 2 - if ```snapd``` is installed
+  - Show how long it did take to run this script
   
   ---
   
