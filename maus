@@ -684,8 +684,11 @@ _interactive_update() {
 
 # Function to request sudo privileges
 _request_sudo() {
+    # non-interactive check for sudo
+    # if "sudo -n" is not true, it returns exit code 1
     if ! sudo -n true 2>/dev/null; then
-        echo "Please enter your password for sudo:"
+        # echo "Please enter your password for sudo:"
+        # update user's timestamp without running a command
         sudo -v
         echo ""
     fi
@@ -695,7 +698,18 @@ _request_sudo() {
 ### Run the Script.. ###
 ########################
 _main() {
+
     time {
+
+        # refresh sudo periodically if the function takes longer to execute with a background loop
+        while true; do
+            sleep 60 # refresh every minute
+            _request_sudo
+        done &
+
+        # echo "Background loop started with PID: $!"
+        bg_pid=$!
+
         echo ""
         echo " Starting System Maintenance!"
         _request_sudo
@@ -709,18 +723,15 @@ _main() {
         _flatpak
         _snapd
 
-        # Refresh sudo periodically if the function takes longer to execute
-        while true; do
-            sleep 60 # Refresh every minute
-            _request_sudo
-        done &
-
         echo -e "\e[1m Elapsed Time: \e[0m"
     }
     echo ""
     echo -e " \e[7m Press [ENTER] to exit \e[0m"
     # wait for input, e.g. by pressing ENTER:
     read -r
+
+    # kill background loop before exit
+    kill $bg_pid
     exit
 }
 
