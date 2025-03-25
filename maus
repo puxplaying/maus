@@ -503,29 +503,19 @@ _update_full() {
     fi
 }
 
-# Check if Meld is installed
-_meld() {
-    if [ -f /usr/bin/meld ]; then # If file exists
-        echo " meld is already installed." &>/dev/null
-    else
-        echo "installing Meld ..."                                    # Install Message
-        if [ -f /var/lib/pacman/db.lck ]; then                        # If file exists
-            echo "Pacman seems to be in use, Meld was not installed!" # Not installed Message
-        else
-            sudo pacman -Syu meld # Else install package
-        fi
-    fi
-}
-
 # Run pacdiff
 _pacdiff() {
     echo " checking pacdiff ..."
     if [[ -n $DIFFPROG ]]; then # this if-condition avoids error message when $DIFFPROG is not set/empty
-        sudo -E pacdiff
+        pacdiff -s
     else
-        sudo -E DIFFPROG="meld" pacdiff
+        if [ -x "$(command -v meld)" ]; then # If file exists
+            # use "meld" when possible if DIFFPROG is unset
+            DIFFPROG="meld" pacdiff -s
+        else
+            echo -e "\e[1m\e[32m==>\e[0m \e[1mPlease install Meld, or set the \"DIFFPROG\" environment variable manually.\e[0m"
+        fi
     fi
-
     echo ""
 }
 
@@ -718,7 +708,6 @@ _main() {
         _check_aur_helper
         _db_check
         _update_full
-        _meld
         _pacdiff
         _flatpak
         _snapd
