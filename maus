@@ -38,28 +38,28 @@ _check_aur_helper() {
 
         # Use "Pamac" as the first option to provide the best possible user experience since it can deal with "update conflicts"
         # check, if /usr/bin/pamac file exists (i.e. pamac is installed)
-        if [[ -f /usr/bin/pamac ]]; then
+        if [ -x "$(command -v pamac)" ]; then
             AUR_Helper="pamac"
 
-        elif [[ -f /usr/bin/yay ]]; then
+        elif [ -x "$(command -v yay)" ]; then
             AUR_Helper="yay"
 
-        elif [[ -f /usr/bin/pikaur ]]; then
+        elif [ -x "$(command -v pikaur)" ]; then
             AUR_Helper="pikaur"
 
-        elif [[ -f /usr/bin/aurman ]]; then
+        elif [ -x "$(command -v aurman)" ]; then
             AUR_Helper="aurman"
 
-        elif [[ -f /usr/bin/pakku ]]; then
+        elif [ -x "$(command -v pakku)" ]; then
             AUR_Helper="pakku"
 
-        elif [[ -f /usr/bin/trizen ]]; then
+        elif [ -x "$(command -v trizen)" ]; then
             AUR_Helper="trizen"
 
-        elif [[ -f /usr/bin/pacaur ]]; then
+        elif [ -x "$(command -v pacaur)" ]; then
             AUR_Helper="pacaur"
 
-        elif [[ -f /usr/bin/paru ]]; then
+        elif [ -x "$(command -v paru)" ]; then
             AUR_Helper="paru"
 
         fi
