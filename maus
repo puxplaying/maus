@@ -177,27 +177,20 @@ _aur_update() {
     elif [[ "$AUR_Helper" == "pamac" ]]; then
 
         # execute "update -a" command:
-        # check if updates are available
-        if LANG=C pamac checkupdates -a --devel | grep 'up to date'; then
-            echo "System up to date" &>/dev/null
-            install_successful=true
+        if [[ "$NOCONFIRMFLAG" == "0" ]] || [[ "$NOCONFIRMFLAG" == "1" ]]; then
+            if (pamac update -a --devel --no-confirm); then
+                install_successful=true
+            else
+                install_successful=false
+            fi
         else
-            if [[ "$NOCONFIRMFLAG" == "0" ]] || [[ "$NOCONFIRMFLAG" == "1" ]]; then
-                if (pamac update -a --devel --no-confirm); then
+            if [[ "$NOCONFIRMFLAG" == "2" ]]; then
+                if (pamac update -a --devel); then
                     install_successful=true
                 else
                     install_successful=false
                 fi
-            else
-                if [[ "$NOCONFIRMFLAG" == "2" ]]; then
-                    if (pamac update -a --devel); then
-                        install_successful=true
-                    else
-                        install_successful=false
-                    fi
-                fi
             fi
-
         fi
 
     elif [[ "$AUR_Helper" == "paru" ]]; then
